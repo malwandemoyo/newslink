@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   INITIAL_ORGANISATIONS,
   INITIAL_RESOURCES,
   INITIAL_RESOURCE_REQUESTS,
+  INITIAL_DISPATCH_BROADCASTS,
   INITIAL_EXPERTS,
   INITIAL_COLLABORATIONS,
   INITIAL_INVESTIGATIONS,
@@ -18,6 +19,7 @@ import {
   Organisation,
   Resource,
   ResourceRequest,
+  DispatchBroadcast,
   JournalistProfile,
   CollaborationRequest,
   Investigation,
@@ -29,30 +31,29 @@ import {
   AuditLogEntry,
 } from "@/types/newsroom";
 import GeographicMap from "@/components/GeographicMap";
+import ResourceDispatchView from "@/components/ResourceDispatchView";
 import KanbanBoard from "@/components/KanbanBoard";
 import AICopilotView from "@/components/AICopilotView";
-import DevOpsArchitectureView from "@/components/DevOpsArchitectureView";
+import SecurityAuditView from "@/components/SecurityAuditView";
 import {
   LayoutDashboard,
-  Camera,
+  Radio,
   Users,
   FolderGit2,
   Bot,
   Newspaper,
-  Server,
+  Shield,
   ShieldCheck,
   Building2,
   CheckCircle2,
-  Clock,
   ArrowRight,
   RotateCcw,
-  Sparkles,
   Lock,
   Share2,
   MapPin,
   Search,
   FileCheck,
-  AlertTriangle,
+  Camera,
 } from "lucide-react";
 
 type NavSection =
@@ -62,76 +63,30 @@ type NavSection =
   | "investigations"
   | "ai_copilot"
   | "news_exchange"
-  | "devops";
-
-const DEMO_STEPS = [
-  {
-    step: 1,
-    title: "1. Bulawayo Newsroom Needs Gear",
-    desc: "Switch to Matabeleland Independent & search for a 4K camera in Bulawayo.",
-    nav: "resources" as NavSection,
-    orgId: "org-byo",
-  },
-  {
-    step: 2,
-    title: "2. Request CITE ZW Cinema Camera",
-    desc: "Request the Sony FX6 Kit on peer-exchange terms.",
-    nav: "resources" as NavSection,
-    orgId: "org-byo",
-  },
-  {
-    step: 3,
-    title: "3. Owner Approves Handover",
-    desc: "Switch to CITE ZW Media Hub to approve the camera booking.",
-    nav: "resources" as NavSection,
-    orgId: "org-cite",
-  },
-  {
-    step: 4,
-    title: "4. Match Environmental Data Specialist",
-    desc: "Find Tariro Moyo (Harare Collective) & invite her to Project Umzingwane.",
-    nav: "expertise" as NavSection,
-    orgId: "org-byo",
-  },
-  {
-    step: 5,
-    title: "5. Coordinate on Investigation Kanban",
-    desc: "Track tasks & human verification sign-offs in the encrypted workspace.",
-    nav: "investigations" as NavSection,
-    orgId: "org-byo",
-  },
-  {
-    step: 6,
-    title: "6. Run Grounded AI Document Research",
-    desc: "Query the 42-page EMA Audit Report with exact page citations & evidence badges.",
-    nav: "ai_copilot" as NavSection,
-    orgId: "org-byo",
-  },
-  {
-    step: 7,
-    title: "7. Verify Primary Evidence & Publish",
-    desc: "Distribute the human-verified story package on the News Exchange.",
-    nav: "news_exchange" as NavSection,
-    orgId: "org-byo",
-  },
-];
+  | "security_audit";
 
 export default function ConnectedNewsroomApp() {
-  const [activeNav, setActiveNav] = useState<NavSection>("overview");
+  const [activeNav, setActiveNav] = useState<NavSection>("resources");
   const [activeOrgId, setActiveOrgId] = useState<string>("org-byo");
-  const [activeDemoStep, setActiveDemoStep] = useState<number>(1);
 
-  // Stateful Domain Store
-  const [organisations] = useState<Organisation[]>(INITIAL_ORGANISATIONS);
+  // Server-Backed SQLite State
+  const [organisations, setOrganisations] = useState<Organisation[]>(
+    INITIAL_ORGANISATIONS
+  );
   const [resources, setResources] = useState<Resource[]>(INITIAL_RESOURCES);
   const [resourceRequests, setResourceRequests] = useState<ResourceRequest[]>(
     INITIAL_RESOURCE_REQUESTS
   );
-  const [experts] = useState<JournalistProfile[]>(INITIAL_EXPERTS);
+  const [dispatchBroadcasts, setDispatchBroadcasts] = useState<
+    DispatchBroadcast[]
+  >(INITIAL_DISPATCH_BROADCASTS);
+  const [experts, setExperts] = useState<JournalistProfile[]>(INITIAL_EXPERTS);
   const [collaborations, setCollaborations] = useState<CollaborationRequest[]>(
     INITIAL_COLLABORATIONS
   );
-  const [investigations] = useState<Investigation[]>(INITIAL_INVESTIGATIONS);
+  const [investigations, setInvestigations] = useState<Investigation[]>(
+    INITIAL_INVESTIGATIONS
+  );
   const [selectedInvestigationId, setSelectedInvestigationId] =
     useState<string>("inv-umzingwane");
   const [kanbanTasks, setKanbanTasks] =
@@ -145,23 +100,12 @@ export default function ConnectedNewsroomApp() {
   const [auditLogs, setAuditLogs] =
     useState<AuditLogEntry[]>(INITIAL_AUDIT_LOGS);
 
-  // Filters & Modals
+  // Filters & Toast
   const [selectedCity, setSelectedCity] = useState<string>("All");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [languageFilter, setLanguageFilter] = useState<string>("All");
-  const [requestModalResource, setRequestModalResource] =
-    useState<Resource | null>(null);
-  const [requestPurpose, setRequestPurpose] = useState<string>(
-    "Film downstream effluent discharge at Umzingwane Dam Weir #3 and interview community water committee"
-  );
-  const [requestDates, setRequestDates] = useState<string>(
-    "Nov 6 – Nov 9, 2026"
-  );
-  const [requestTerms, setRequestTerms] = useState<string>(
-    "Reciprocal Network Loan ($0 fee + Full CITE ZW visual co-credit)"
-  );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [dbSynced, setDbSynced] = useState<boolean>(false);
 
   const activeOrg =
     organisations.find((o) => o.id === activeOrgId) || organisations[0];
@@ -173,213 +117,102 @@ export default function ConnectedNewsroomApp() {
     }, 4500);
   };
 
-  const appendAudit = (
-    category: AuditLogEntry["category"],
-    action: string,
-    resourceTarget: string
-  ) => {
-    const actorMap: Record<string, string> = {
-      "org-byo": "Sipho Ncube",
-      "org-cite": "Nqobile Dube",
-      "org-hre": "Tariro Moyo",
-      "org-mre": "Farai Mutasa",
-    };
-    const newEntry: AuditLogEntry = {
-      id: `aud-${Date.now()}`,
-      timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
-      actorName: actorMap[activeOrgId] || "Newsroom Editor",
-      actorOrgId: activeOrgId,
-      category,
-      action,
-      resourceTarget,
-    };
-    setAuditLogs((prev) => [newEntry, ...prev]);
-  };
-
-  // Load persisted state if present
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("connected_newsroom_mvp_v1");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.resources) setResources(parsed.resources);
-        if (parsed.resourceRequests)
-          setResourceRequests(parsed.resourceRequests);
-        if (parsed.collaborations) setCollaborations(parsed.collaborations);
-        if (parsed.kanbanTasks) setKanbanTasks(parsed.kanbanTasks);
-        if (parsed.stories) setStories(parsed.stories);
-        if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
-      }
-    } catch {
-      // Ignore storage errors
-    }
+  const applyServerState = useCallback((data: Record<string, unknown>) => {
+    if (Array.isArray(data.organisations))
+      setOrganisations(data.organisations as Organisation[]);
+    if (Array.isArray(data.resources))
+      setResources(data.resources as Resource[]);
+    if (Array.isArray(data.resourceRequests))
+      setResourceRequests(data.resourceRequests as ResourceRequest[]);
+    if (Array.isArray(data.dispatchBroadcasts))
+      setDispatchBroadcasts(data.dispatchBroadcasts as DispatchBroadcast[]);
+    if (Array.isArray(data.experts))
+      setExperts(data.experts as JournalistProfile[]);
+    if (Array.isArray(data.collaborations))
+      setCollaborations(data.collaborations as CollaborationRequest[]);
+    if (Array.isArray(data.investigations))
+      setInvestigations(data.investigations as Investigation[]);
+    if (Array.isArray(data.kanbanTasks))
+      setKanbanTasks(data.kanbanTasks as KanbanTask[]);
+    if (Array.isArray(data.documents))
+      setDocuments(data.documents as DocumentRecord[]);
+    if (Array.isArray(data.stories))
+      setStories(data.stories as StoryPackage[]);
+    if (Array.isArray(data.syndicationRequests))
+      setSyndicationRequests(data.syndicationRequests as SyndicationRequest[]);
+    if (Array.isArray(data.auditLogs))
+      setAuditLogs(data.auditLogs as AuditLogEntry[]);
+    setDbSynced(true);
   }, []);
 
-  // Save state changes
+  // Load initial state from SQLite API
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        "connected_newsroom_mvp_v1",
-        JSON.stringify({
-          resources,
-          resourceRequests,
-          collaborations,
-          kanbanTasks,
-          stories,
-          auditLogs,
-        })
-      );
-    } catch {
-      // Ignore
-    }
-  }, [
-    resources,
-    resourceRequests,
-    collaborations,
-    kanbanTasks,
-    stories,
-    auditLogs,
-  ]);
-
-  const handleResetDemo = () => {
-    localStorage.removeItem("connected_newsroom_mvp_v1");
-    setResources(INITIAL_RESOURCES);
-    setResourceRequests(INITIAL_RESOURCE_REQUESTS);
-    setCollaborations(INITIAL_COLLABORATIONS);
-    setKanbanTasks(INITIAL_KANBAN_TASKS);
-    setDocuments(INITIAL_DOCUMENTS);
-    setStories(INITIAL_STORIES);
-    setSyndicationRequests(INITIAL_SYNDICATION_REQUESTS);
-    setAuditLogs(INITIAL_AUDIT_LOGS);
-    setActiveOrgId("org-byo");
-    setActiveDemoStep(1);
-    triggerToast("Demo state reset to clean starting point.");
-  };
-
-  // Resource Request Submission (inDrive-style peer request)
-  const handleCreateResourceRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!requestModalResource) return;
-
-    const newReq: ResourceRequest = {
-      id: `req-${Date.now()}`,
-      resourceId: requestModalResource.id,
-      requesterOrgId: activeOrgId,
-      ownerOrgId: requestModalResource.ownerOrgId,
-      investigationId: "inv-umzingwane",
-      purpose: requestPurpose,
-      requestedDates: requestDates,
-      proposedTerms: requestTerms,
-      status: "Pending Approval",
-      createdAt: "2026-11-04 12:05",
-    };
-
-    setResourceRequests((prev) => [newReq, ...prev]);
-    setResources((prev) =>
-      prev.map((r) =>
-        r.id === requestModalResource.id ? { ...r, status: "Requested" } : r
-      )
-    );
-    appendAudit(
-      "Resource Booking",
-      `Requested '${requestModalResource.title}' (${requestDates}) on terms: ${requestTerms}`,
-      requestModalResource.id
-    );
-    setRequestModalResource(null);
-    setActiveDemoStep(3);
-    triggerToast(
-      `Equipment request sent! Switch persona to ${
-        organisations.find((o) => o.id === requestModalResource.ownerOrgId)
-          ?.shortName
-      } to approve handover.`
-    );
-  };
-
-  // Owner Approves / Hands Over Equipment
-  const handleUpdateRequestStatus = (
-    reqObj: ResourceRequest,
-    nextStatus: ResourceRequest["status"]
-  ) => {
-    setResourceRequests((prev) =>
-      prev.map((r) =>
-        r.id === reqObj.id
-          ? {
-              ...r,
-              status: nextStatus,
-              conditionOnCheckout:
-                nextStatus === "Approved" || nextStatus === "Checked Out"
-                  ? "Lens clean, 2x 256GB CFexpress formatted, batteries 100%"
-                  : r.conditionOnCheckout,
-              conditionOnReturn:
-                nextStatus === "Returned"
-                  ? "Returned in Excellent condition; zero sensor dust"
-                  : r.conditionOnReturn,
-            }
-          : r
-      )
-    );
-
-    setResources((prev) =>
-      prev.map((res) => {
-        if (res.id !== reqObj.resourceId) return res;
-        return {
-          ...res,
-          status:
-            nextStatus === "Returned"
-              ? "Available"
-              : nextStatus === "Approved" || nextStatus === "Checked Out"
-              ? "Booked"
-              : "Requested",
-        };
+    fetch("/api/state")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) applyServerState(data);
       })
-    );
+      .catch(() => {
+        // Fallback to seed if offline
+      });
+  }, [applyServerState]);
 
-    appendAudit(
-      "Resource Booking",
-      `Updated booking ${reqObj.id} status to '${nextStatus}' with condition log`,
-      reqObj.resourceId
-    );
-    triggerToast(`Booking ${nextStatus}! Audit log updated.`);
+  const mutateServerState = async (
+    action: string,
+    payload: Record<string, unknown> = {},
+    toastText?: string
+  ) => {
+    try {
+      const res = await fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, activeOrgId, payload }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        applyServerState(data);
+        if (toastText) triggerToast(toastText);
+      } else {
+        triggerToast(data.error || "Operation failed");
+      }
+    } catch {
+      triggerToast("Network error communicating with SQLite API");
+    }
   };
 
-  // Request Specialist Collaboration
-  const handleInviteExpert = (expert: JournalistProfile) => {
+  const handleResetDatabase = async () => {
+    await mutateServerState(
+      "reset_db",
+      {},
+      "SQLite database reset to clean seed state."
+    );
+    setActiveOrgId("org-byo");
+  };
+
+  const handleInviteExpert = async (expert: JournalistProfile) => {
     const exists = collaborations.some(
       (c) =>
         c.expertId === expert.id && c.investigationId === "inv-umzingwane"
     );
     if (exists) {
-      triggerToast(`${expert.name} is already invited to Project Umzingwane.`);
+      triggerToast(`${expert.name} is already on Project Umzingwane.`);
       return;
     }
-
-    const newCollab: CollaborationRequest = {
-      id: `col-${Date.now()}`,
-      expertId: expert.id,
-      fromOrgId: activeOrgId,
-      toOrgId: expert.orgId,
-      investigationId: "inv-umzingwane",
-      roleRequested: `Specialist Collaboration: ${expert.skills[0]}`,
-      scopeNote:
-        "Cross-reference procurement ledger #URDC-2026-09 and verify EMA water sample tables.",
-      status: "Accepted",
-      createdAt: "2026-11-04 12:08",
-    };
-
-    setCollaborations((prev) => [newCollab, ...prev]);
-    appendAudit(
-      "Investigation ACL",
-      `Invited specialist ${expert.name} (${expert.role}) to PROJECT UMZINGWANE`,
-      "inv-umzingwane"
-    );
-    setActiveDemoStep(5);
-    triggerToast(
-      `Collaboration request accepted! ${expert.name} added to Project Umzingwane.`
+    await mutateServerState(
+      "create_collaboration",
+      {
+        expertId: expert.id,
+        expertName: expert.name,
+        toOrgId: expert.orgId,
+        roleRequested: `Specialist Collaboration: ${expert.skills[0]}`,
+        scopeNote:
+          "Cross-reference procurement ledger #URDC-2026-09 and verify EMA water sample tables.",
+      },
+      `Invited ${expert.name} to Project Umzingwane (Saved to SQLite).`
     );
   };
 
-  // Kanban Handlers
-  const handleMoveKanbanTask = (
+  const handleMoveKanbanTask = async (
     taskId: string,
     newColumn: KanbanColumnId
   ) => {
@@ -394,84 +227,47 @@ export default function ConnectedNewsroomApp() {
       );
       return;
     }
-    setKanbanTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, column: newColumn } : t))
+    await mutateServerState(
+      "move_kanban_task",
+      { taskId, newColumn },
+      `Moved task to '${newColumn}'.`
     );
-    if (targetTask) {
-      appendAudit(
-        "Human Verification",
-        `Moved task '${targetTask.title}' to stage '${newColumn}'`,
-        targetTask.investigationId
-      );
-    }
   };
 
-  const handleSignOffKanbanTask = (taskId: string) => {
-    const actorMap: Record<string, string> = {
-      "org-byo": "Sipho Ncube (Matabeleland Ind.)",
-      "org-cite": "Nqobile Dube (CITE ZW)",
-      "org-hre": "Tariro Moyo (Harare Collective)",
-      "org-mre": "Farai Mutasa (Manicaland Wire)",
-    };
-    const signer = actorMap[activeOrgId] || "Verified Editor";
-    setKanbanTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, signedOffBy: signer } : t))
+  const handleSignOffKanbanTask = async (taskId: string) => {
+    await mutateServerState(
+      "signoff_kanban_task",
+      { taskId },
+      `Recorded human editorial verification sign-off in SQLite.`
     );
-    appendAudit(
-      "Human Verification",
-      `Recorded human primary-source verification sign-off on task ${taskId}`,
-      "inv-umzingwane"
-    );
-    triggerToast(`Human verification recorded by ${signer}.`);
   };
 
-  const handleAddKanbanTask = (newTask: Omit<KanbanTask, "id">) => {
-    const created: KanbanTask = {
-      ...newTask,
-      id: `task-${Date.now()}`,
-    };
-    setKanbanTasks((prev) => [created, ...prev]);
-    appendAudit(
-      "Investigation ACL",
-      `Created investigation task '${created.title}' assigned to ${created.assigneeName}`,
-      created.investigationId
+  const handleAddKanbanTask = async (newTask: Omit<KanbanTask, "id">) => {
+    await mutateServerState(
+      "add_kanban_task",
+      { task: newTask },
+      "Added investigation task to Kanban board."
     );
-    triggerToast("New investigation task added to Kanban board.");
   };
 
-  // Syndication Request Handler
-  const handleRequestSyndication = (story: StoryPackage) => {
+  const handleRequestSyndication = async (story: StoryPackage) => {
     const alreadyRequested = syndicationRequests.some(
       (s) => s.storyId === story.id && s.requestingOrgId === activeOrgId
     );
     if (alreadyRequested) {
       triggerToast(
-        `Your newsroom (${activeOrg.shortName}) already holds an active republication license for this story.`
+        `${activeOrg.shortName} already holds an active republication license for this story.`
       );
       return;
     }
-    const newSyn: SyndicationRequest = {
-      id: `syn-${Date.now()}`,
-      storyId: story.id,
-      requestingOrgId: activeOrgId,
-      originOrgId: story.originOrgId,
-      status: "Approved",
-      plannedPublishDate: "2026-11-05 06:00 CAT",
-      agreedAttribution: story.attributionRequirement,
-    };
-    setSyndicationRequests((prev) => [newSyn, ...prev]);
-    setStories((prev) =>
-      prev.map((s) =>
-        s.id === story.id ? { ...s, republishCount: s.republishCount + 1 } : s
-      )
-    );
-    appendAudit(
-      "Story Syndication",
-      `Granted republication license for '${story.title}' with mandatory attribution metadata`,
-      story.id
-    );
-    triggerToast(
-      `Syndication package unlocked for ${activeOrg.name} with attribution lock!`
+    await mutateServerState(
+      "request_syndication",
+      {
+        storyId: story.id,
+        originOrgId: story.originOrgId,
+        agreedAttribution: story.attributionRequirement,
+      },
+      `Syndication license unlocked for ${activeOrg.name} with mandatory attribution lock.`
     );
   };
 
@@ -516,10 +312,10 @@ export default function ConnectedNewsroomApp() {
           <div className="mx-3 mt-3 p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 space-y-1">
             <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Editorial Safeguard Active
+              Editorial Independence
             </div>
             <p className="text-[10px] text-slate-400 leading-relaxed">
-              AI assists research & citations. Humans verify evidence and control publication.
+              Human journalists verify primary evidence and control all publication decisions.
             </p>
           </div>
 
@@ -529,17 +325,15 @@ export default function ConnectedNewsroomApp() {
               [
                 {
                   id: "overview",
-                  label: "Overview & Demo Flow",
+                  label: "Network Overview",
                   icon: LayoutDashboard,
-                  badge: "Start",
+                  badge: `${organisations.length} Orgs`,
                 },
                 {
                   id: "resources",
-                  label: "Resource Exchange",
-                  icon: Camera,
-                  badge: `${
-                    resources.filter((r) => r.status === "Available").length
-                  } Avail`,
+                  label: "Resource & Field Dispatch",
+                  icon: Radio,
+                  badge: `${dispatchBroadcasts.length} Live`,
                 },
                 {
                   id: "expertise",
@@ -551,11 +345,11 @@ export default function ConnectedNewsroomApp() {
                   id: "investigations",
                   label: "Investigations & Kanban",
                   icon: FolderGit2,
-                  badge: "ACL",
+                  badge: `${kanbanTasks.length}`,
                 },
                 {
                   id: "ai_copilot",
-                  label: "AI Newsroom Copilot",
+                  label: "AI Research Copilot",
                   icon: Bot,
                   badge: "RAG",
                 },
@@ -566,10 +360,10 @@ export default function ConnectedNewsroomApp() {
                   badge: `${stories.length}`,
                 },
                 {
-                  id: "devops",
-                  label: "DevOps & OSS Stack",
-                  icon: Server,
-                  badge: "Infra",
+                  id: "security_audit",
+                  label: "ACLs & Audit Log",
+                  icon: Shield,
+                  badge: `${auditLogs.length}`,
                 },
               ] as const
             ).map((item) => {
@@ -608,30 +402,30 @@ export default function ConnectedNewsroomApp() {
           </nav>
         </div>
 
-        {/* Bottom Demo Reset & Active Status */}
+        {/* Bottom SQLite Status & Reset */}
         <div className="p-3 border-t border-slate-800/80 space-y-2 bg-slate-950/40">
           <div className="text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Demo Persistence</span>
+            <span>Database Engine</span>
             <span className="text-emerald-400 font-mono text-[10px]">
-              ● Local Adapter Active
+              ● {dbSynced ? "SQLite WAL Active" : "Connecting..."}
             </span>
           </div>
           <button
-            onClick={handleResetDemo}
+            onClick={handleResetDatabase}
             className="w-full py-1.5 px-3 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Demo Journey
+            Reset SQLite Database
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header: Active Newsroom Persona Switcher */}
+        {/* Top Header: Active Newsroom Organization Switcher */}
         <header className="border-b border-slate-800/90 bg-[#0f172a]/90 backdrop-blur px-5 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Active Newsroom Context:</span>
+            <span className="text-xs text-slate-400">Active Newsroom:</span>
             <div className="flex flex-wrap items-center gap-1.5">
               {organisations.map((org) => {
                 const isCurrent = org.id === activeOrgId;
@@ -669,93 +463,35 @@ export default function ConnectedNewsroomApp() {
 
           <div className="flex items-center gap-2 text-xs">
             <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px]">
-              Role: Editorial & Investigative Lead
+              SQLite + Leaflet PostGIS
             </span>
           </div>
         </header>
-
-        {/* Guided Interactive Demo Strip ("A Story That Takes a Network") */}
-        <div className="bg-[#111b30] border-b border-slate-800 px-5 py-2.5">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Interactive Pitch Journey: “A Story That Takes a Network” (Click any step)
-            </span>
-            <span className="text-[11px] text-slate-400">
-              GitHub + Kanban + inDrive for Independent Journalism
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
-            {DEMO_STEPS.map((ds) => {
-              const isCurrentStep = activeDemoStep === ds.step;
-              return (
-                <button
-                  key={ds.step}
-                  onClick={() => {
-                    setActiveDemoStep(ds.step);
-                    setActiveNav(ds.nav);
-                    setActiveOrgId(ds.orgId);
-                  }}
-                  className={`p-2 rounded-lg border text-left transition cursor-pointer ${
-                    isCurrentStep
-                      ? "bg-teal-500/20 border-teal-400 text-white"
-                      : "bg-slate-900/70 border-slate-800/90 text-slate-300 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="text-[11px] font-semibold leading-tight truncate">
-                    {ds.title}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                    {ds.desc}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Main Workspace Body */}
         <main className="p-5 flex-1 space-y-6 overflow-y-auto">
           {/* 1. OVERVIEW SECTION */}
           {activeNav === "overview" && (
             <div className="space-y-6">
-              {/* Hero Banner */}
-              <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-[#111c35] via-[#0f172a] to-[#0d1f2d] p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-medium">
-                    Open-Source Collaboration Infrastructure • Active Context:{" "}
-                    <strong>{activeOrg.name}</strong>
-                  </div>
-                  <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
-                    Shared infrastructure for independent journalism—without surrendering editorial independence.
-                  </h2>
-                  <p className="text-xs lg:text-sm text-slate-300 leading-relaxed">
-                    Share field cameras and studios peer-to-peer (<strong>inDrive model</strong>), coordinate cross-newsroom investigations on verification boards (<strong>Kanban model</strong>), and research primary documents with grounded AI citations and strict access controls (<strong>GitHub / Aleph model</strong>).
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5 shrink-0">
-                  <button
-                    onClick={() => {
-                      setActiveDemoStep(1);
-                      setActiveNav("resources");
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs flex items-center gap-2 shadow-lg cursor-pointer"
-                  >
-                    Launch Step 1: Request Camera <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setActiveNav("ai_copilot")}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 font-medium text-xs flex items-center gap-2 cursor-pointer"
-                  >
-                    <Bot className="w-4 h-4 text-teal-400" />
-                    Open Grounded AI Copilot
-                  </button>
-                </div>
-              </div>
-
-              {/* Network Intelligence Metrics */}
+              {/* Operational Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div
+                  onClick={() => setActiveNav("resources")}
+                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-amber-500/40 transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>Live Field Broadcasts</span>
+                    <Radio className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-white mt-2">
+                    {dispatchBroadcasts.length} Active Needs
+                  </div>
+                  <div className="text-[11px] text-amber-300 mt-1">
+                    {dispatchBroadcasts.reduce((a, b) => a + b.bids.length, 0)}{" "}
+                    partner bids & counter-offers →
+                  </div>
+                </div>
+
                 <div
                   onClick={() => setActiveNav("resources")}
                   className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
@@ -769,23 +505,7 @@ export default function ConnectedNewsroomApp() {
                     {resources.length}
                   </div>
                   <div className="text-[11px] text-teal-300 mt-1">
-                    Available across Bulawayo & Harare →
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => setActiveNav("expertise")}
-                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Verified Specialist Network</span>
-                    <Users className="w-4 h-4 text-sky-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-white mt-2">
-                    {experts.length} Specialists
-                  </div>
-                  <div className="text-[11px] text-sky-300 mt-1">
-                    Data forensics, drone, legal & radio →
+                    Serialized cameras, drones & studios →
                   </div>
                 </div>
 
@@ -794,17 +514,15 @@ export default function ConnectedNewsroomApp() {
                   className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Active Co-Investigations</span>
-                    <FolderGit2 className="w-4 h-4 text-amber-400" />
+                    <span>Investigation Kanban</span>
+                    <FolderGit2 className="w-4 h-4 text-sky-400" />
                   </div>
                   <div className="text-2xl font-bold text-white mt-2">
-                    {
-                      kanbanTasks.filter((t) => Boolean(t.signedOffBy)).length
-                    }{" "}
-                    / {kanbanTasks.length} Tasks
+                    {kanbanTasks.filter((t) => Boolean(t.signedOffBy)).length} /{" "}
+                    {kanbanTasks.length} Verified
                   </div>
-                  <div className="text-[11px] text-amber-300 mt-1">
-                    Human-verified on Kanban board →
+                  <div className="text-[11px] text-sky-300 mt-1">
+                    Human sign-off enforced →
                   </div>
                 </div>
 
@@ -813,29 +531,28 @@ export default function ConnectedNewsroomApp() {
                   className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>News Exchange Packages</span>
+                    <span>News Exchange Syndications</span>
                     <Share2 className="w-4 h-4 text-emerald-400" />
                   </div>
                   <div className="text-2xl font-bold text-white mt-2">
-                    {stories.reduce((acc, s) => acc + s.republishCount, 0)} Syndications
+                    {stories.reduce((acc, s) => acc + s.republishCount, 0)} Licenses
                   </div>
                   <div className="text-[11px] text-emerald-300 mt-1">
-                    Attribution & licensing preserved →
+                    Attribution & embargoes locked →
                   </div>
                 </div>
               </div>
 
-              {/* Geographic Resource Discovery Map right on Overview */}
+              {/* Live Leaflet Geospatial Map */}
               <GeographicMap
                 organisations={organisations}
                 resources={resources}
+                broadcasts={dispatchBroadcasts}
                 experts={experts}
                 selectedCity={selectedCity}
                 onSelectCity={setSelectedCity}
-                onRequestResource={(res) => {
-                  setRequestModalResource(res);
-                  setActiveNav("resources");
-                }}
+                onRequestResource={() => setActiveNav("resources")}
+                onSelectBroadcast={() => setActiveNav("resources")}
               />
 
               {/* Participating Independent Newsrooms */}
@@ -883,344 +600,65 @@ export default function ConnectedNewsroomApp() {
             </div>
           )}
 
-          {/* 2. RESOURCE EXCHANGE (inDrive-style Peer Sharing + Approval Flow) */}
+          {/* 2. RESOURCE & FIELD DISPATCH (inDrive + Leihs + Leaflet Map) */}
           {activeNav === "resources" && (
-            <div className="space-y-6">
-              <GeographicMap
-                organisations={organisations}
-                resources={resources}
-                experts={experts}
-                selectedCity={selectedCity}
-                onSelectCity={setSelectedCity}
-                onRequestResource={(res) => setRequestModalResource(res)}
-              />
-
-              {/* Filter Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0f172a] p-4 rounded-xl border border-slate-800">
-                <div>
-                  <h2 className="text-sm font-bold text-white">
-                    Peer-to-Peer Equipment & Facility Exchange
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Request idle cameras, audio recorders, drones, and studios directly from partner newsrooms with logged handover condition checks
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {[
-                    "All",
-                    "Camera & Optics",
-                    "Audio & Podcast",
-                    "Studio & Edit Bay",
-                    "Drone & Environmental Sensor",
-                    "Field Vehicle & Power",
-                  ].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
-                        selectedCategory === cat
-                          ? "bg-teal-500 text-slate-950 font-semibold"
-                          : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Equipment Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {resources
-                  .filter(
-                    (r) =>
-                      (selectedCity === "All" || r.city === selectedCity) &&
-                      (selectedCategory === "All" ||
-                        r.category === selectedCategory)
-                  )
-                  .map((res) => {
-                    const owner = organisations.find(
-                      (o) => o.id === res.ownerOrgId
-                    );
-                    const isOwnGear = res.ownerOrgId === activeOrgId;
-
-                    return (
-                      <div
-                        key={res.id}
-                        className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-4 hover:border-slate-700 transition"
-                      >
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
-                              {res.category}
-                            </span>
-                            <span
-                              className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
-                                res.status === "Available"
-                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                  : res.status === "Requested"
-                                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                                  : "bg-sky-500/15 text-sky-300 border border-sky-500/30"
-                              }`}
-                            >
-                              {res.status}
-                            </span>
-                          </div>
-
-                          <h3 className="text-sm font-bold text-slate-100 leading-snug">
-                            {res.title}
-                          </h3>
-
-                          <div className="text-xs text-slate-400 flex items-center justify-between">
-                            <span>
-                              Owner:{" "}
-                              <strong className="text-slate-200">
-                                {owner?.name}
-                              </strong>
-                            </span>
-                            <span className="text-teal-300 font-medium">
-                              📍 {res.city}
-                            </span>
-                          </div>
-
-                          <ul className="space-y-1 text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                            {res.specs.map((s, i) => (
-                              <li key={i}>• {s}</li>
-                            ))}
-                          </ul>
-
-                          <div className="text-[11px] space-y-1 pt-1">
-                            <div className="text-slate-300">
-                              <span className="text-slate-400">Peer Terms:</span>{" "}
-                              {res.dailyTerms}
-                            </div>
-                            <div className="text-slate-400">
-                              Window: {res.availableWindow} • Condition:{" "}
-                              <span className="text-emerald-300">
-                                {res.condition}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                          {isOwnGear ? (
-                            <span className="text-[11px] text-slate-400 italic">
-                              Owned by your active newsroom ({activeOrg.shortName})
-                            </span>
-                          ) : res.status === "Available" ? (
-                            <button
-                              onClick={() => setRequestModalResource(res)}
-                              className="w-full py-2 px-3 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs transition cursor-pointer"
-                            >
-                              Request Equipment Booking →
-                            </button>
-                          ) : (
-                            <span className="text-xs text-amber-300 font-medium">
-                              Currently {res.status} (See Booking Queue Below)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              {/* Request Modal */}
-              {requestModalResource && (
-                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-                  <form
-                    onSubmit={handleCreateResourceRequest}
-                    className="w-full max-w-lg rounded-2xl border border-teal-500/50 bg-[#0f172a] p-5 space-y-4 shadow-2xl"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div>
-                        <span className="text-[10px] font-mono uppercase text-teal-400">
-                          Peer-to-Peer Equipment Booking Request
-                        </span>
-                        <h3 className="text-sm font-bold text-white mt-0.5">
-                          {requestModalResource.title}
-                        </h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setRequestModalResource(null)}
-                        className="text-xs text-slate-400 hover:text-white"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 text-xs">
-                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex justify-between">
-                        <span className="text-slate-400">Requesting Newsroom:</span>
-                        <strong className="text-teal-300">{activeOrg.name}</strong>
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 mb-1">
-                          Editorial Purpose / Investigation Assignment
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={requestPurpose}
-                          onChange={(e) => setRequestPurpose(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-slate-400 mb-1">
-                            Requested Dates
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={requestDates}
-                            onChange={(e) => setRequestDates(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 mb-1">
-                            Proposed Exchange / Credit Terms
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={requestTerms}
-                            onChange={(e) => setRequestTerms(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setRequestModalResource(null)}
-                        className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 rounded-lg bg-teal-500 text-slate-950 font-semibold text-xs cursor-pointer"
-                      >
-                        Submit Booking Request
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Active Bookings, Approvals & Handover Checklist Table */}
-              <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-white">
-                      Equipment Bookings, Approvals & Handover Condition Ledger
-                    </h3>
-                    <p className="text-[11px] text-slate-400">
-                      Switch active newsroom to <strong>CITE ZW</strong> or <strong>Harare Collective</strong> in the top bar to approve requests and log returns
-                    </p>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-slate-800/80">
-                  {resourceRequests.map((req) => {
-                    const resItem = resources.find(
-                      (r) => r.id === req.resourceId
-                    );
-                    const requester = organisations.find(
-                      (o) => o.id === req.requesterOrgId
-                    );
-                    const owner = organisations.find(
-                      (o) => o.id === req.ownerOrgId
-                    );
-                    const canManage = activeOrgId === req.ownerOrgId;
-
-                    return (
-                      <div
-                        key={req.id}
-                        className="p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-bold text-white">
-                              {resItem?.title}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30 font-semibold">
-                              {req.status}
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              {requester?.shortName} → {owner?.shortName} (
-                              {req.requestedDates})
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-300">
-                            Purpose: {req.purpose} •{" "}
-                            <span className="text-teal-300">
-                              Terms: {req.proposedTerms}
-                            </span>
-                          </p>
-                          {(req.conditionOnCheckout ||
-                            req.conditionOnReturn) && (
-                            <div className="text-[11px] text-slate-400 font-mono">
-                              {req.conditionOnCheckout &&
-                                `Checkout Log: ${req.conditionOnCheckout}`}{" "}
-                              {req.conditionOnReturn &&
-                                `| Return Log: ${req.conditionOnReturn}`}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 shrink-0">
-                          {canManage ? (
-                            <>
-                              {req.status === "Pending Approval" && (
-                                <button
-                                  onClick={() =>
-                                    handleUpdateRequestStatus(req, "Approved")
-                                  }
-                                  className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs cursor-pointer"
-                                >
-                                  Approve & Log Handover ✓
-                                </button>
-                              )}
-                              {req.status === "Approved" && (
-                                <button
-                                  onClick={() =>
-                                    handleUpdateRequestStatus(req, "Returned")
-                                  }
-                                  className="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs cursor-pointer"
-                                >
-                                  Log Equipment Return ✓
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setActiveOrgId(req.ownerOrgId);
-                                triggerToast(
-                                  `Switched to ${owner?.shortName} so you can approve this booking.`
-                                );
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs cursor-pointer"
-                            >
-                              Switch to {owner?.shortName} to Approve →
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <ResourceDispatchView
+              organisations={organisations}
+              resources={resources}
+              resourceRequests={resourceRequests}
+              broadcasts={dispatchBroadcasts}
+              experts={experts}
+              activeOrgId={activeOrgId}
+              selectedCity={selectedCity}
+              onSelectCity={setSelectedCity}
+              onCreateResourceRequest={async (payload) => {
+                await mutateServerState(
+                  "create_resource_request",
+                  payload,
+                  "Booking request saved to SQLite & Handover PIN generated!"
+                );
+              }}
+              onCounterOfferRequest={async (payload) => {
+                await mutateServerState(
+                  "counter_offer_request",
+                  payload,
+                  `Counter-offer ($${payload.counterRateUsd}/day) sent to requester!`
+                );
+              }}
+              onUpdateResourceRequest={async (payload) => {
+                await mutateServerState(
+                  "update_resource_request",
+                  payload,
+                  `Booking updated to '${payload.nextStatus}' with physical condition log.`
+                );
+              }}
+              onCreateBroadcast={async (payload) => {
+                await mutateServerState(
+                  "create_dispatch_broadcast",
+                  payload,
+                  `Live field need broadcast to ${payload.city} (${payload.radiusKm}km radius)!`
+                );
+              }}
+              onSubmitBid={async (payload) => {
+                await mutateServerState(
+                  "submit_dispatch_bid",
+                  payload,
+                  `Bid / Counter-Offer ($${payload.proposedRateUsd}/day) posted to broadcast!`
+                );
+              }}
+              onAcceptBid={async (payload) => {
+                await mutateServerState(
+                  "accept_dispatch_bid",
+                  payload,
+                  "Offer accepted! Dispatch locked & physical Handover PIN generated."
+                );
+              }}
+              onSwitchOrg={(orgId) => {
+                setActiveOrgId(orgId);
+                const orgObj = organisations.find((o) => o.id === orgId);
+                triggerToast(`Switched active newsroom to ${orgObj?.name}.`);
+              }}
+            />
           )}
 
           {/* 3. PEOPLE & EXPERTISE NETWORK */}
@@ -1232,7 +670,7 @@ export default function ConnectedNewsroomApp() {
                     Expertise Network & Transparent Specialist Matching
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Structured filtering by investigative skill, beat, language, and availability before semantic ranking
+                    Structured filtering by investigative skill, beat, language, and availability
                   </p>
                 </div>
 
@@ -1363,7 +801,6 @@ export default function ConnectedNewsroomApp() {
           {/* 4. COLLABORATIVE INVESTIGATIONS & KANBAN WORKSPACE */}
           {activeNav === "investigations" && (
             <div className="space-y-5">
-              {/* Investigation Switcher (Demonstrating Private by Default ACLs) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {investigations.map((inv) => {
                   const hasAccess =
@@ -1423,20 +860,17 @@ export default function ConnectedNewsroomApp() {
                     onClick={() => setActiveOrgId("org-hre")}
                     className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-semibold text-xs cursor-pointer"
                   >
-                    Switch Persona to Harare Collective to Inspect →
+                    Switch Active Newsroom to Harare Collective →
                   </button>
                 </div>
               ) : (
                 <>
-                  {/* Investigation Agreement & Partner Metadata */}
                   <div className="p-4 rounded-xl border border-slate-800 bg-[#11192d] space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">
-                          {selectedInvestigation.codeName}:{" "}
-                          {selectedInvestigation.title}
-                        </span>
-                      </div>
+                      <span className="text-xs font-bold text-white">
+                        {selectedInvestigation.codeName}:{" "}
+                        {selectedInvestigation.title}
+                      </span>
                       <span className="text-xs font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded">
                         Embargo Until: {selectedInvestigation.embargoUntil}
                       </span>
@@ -1449,7 +883,6 @@ export default function ConnectedNewsroomApp() {
                     </p>
                   </div>
 
-                  {/* Interactive Kanban Board */}
                   <KanbanBoard
                     tasks={kanbanTasks.filter(
                       (t) => t.investigationId === selectedInvestigation.id
@@ -1473,37 +906,34 @@ export default function ConnectedNewsroomApp() {
               organisations={organisations}
               activeOrgId={activeOrgId}
               onUploadDocument={(newDoc) => {
-                setDocuments((prev) => [newDoc, ...prev]);
-                appendAudit(
-                  "Investigation ACL",
-                  `Uploaded & indexed document '${newDoc.title}' with policy '${newDoc.aiConsentStatus}'`,
-                  newDoc.id
-                );
-                triggerToast(
-                  `Document "${newDoc.title}" indexed with entity extraction!`
+                mutateServerState(
+                  "upload_document",
+                  { document: newDoc },
+                  `Document "${newDoc.title}" indexed into SQLite repository.`
                 );
               }}
               onLogAIQuery={(docTitle, mode, q) => {
-                appendAudit(
-                  "AI Query",
-                  `Executed grounded query ("${q}...") on '${docTitle}' via ${mode}`,
-                  docTitle
-                );
+                mutateServerState("log_audit", {
+                  category: "AI Query",
+                  actionText: `Executed grounded query ("${q}...") on '${docTitle}' via ${mode}`,
+                  resourceTarget: docTitle,
+                });
               }}
               onLogHumanVerification={(docTitle, pageNum) => {
-                appendAudit(
-                  "Human Verification",
-                  `Journalist inspected and verified primary source Page ${pageNum} in '${docTitle}'`,
-                  docTitle
-                );
-                triggerToast(
-                  `Page ${pageNum} marked as Human-Verified in the immutable audit log.`
+                mutateServerState(
+                  "log_audit",
+                  {
+                    category: "Human Verification",
+                    actionText: `Journalist verified primary source Page ${pageNum} in '${docTitle}'`,
+                    resourceTarget: docTitle,
+                  },
+                  `Page ${pageNum} marked as Human-Verified in SQLite Audit Log.`
                 );
               }}
             />
           )}
 
-          {/* 6. NEWS EXCHANGE (Superdesk-Style Content Distribution) */}
+          {/* 6. NEWS EXCHANGE */}
           {activeNav === "news_exchange" && (
             <div className="space-y-5">
               <div className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-wrap items-center justify-between gap-4">
@@ -1619,11 +1049,13 @@ export default function ConnectedNewsroomApp() {
             </div>
           )}
 
-          {/* 7. DEVOPS & OPEN-SOURCE ARCHITECTURE */}
-          {activeNav === "devops" && (
-            <DevOpsArchitectureView
+          {/* 7. SECURITY ACLs & IMMUTABLE AUDIT LOG */}
+          {activeNav === "security_audit" && (
+            <SecurityAuditView
               auditLogs={auditLogs}
               organisations={organisations}
+              investigations={investigations}
+              activeOrgId={activeOrgId}
             />
           )}
         </main>

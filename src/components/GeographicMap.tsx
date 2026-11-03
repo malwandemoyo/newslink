@@ -1,334 +1,273 @@
 "use client";
 
-import React, { useState } from "react";
-import { Organisation, Resource, JournalistProfile } from "@/types/newsroom";
-import { MapPin, Camera, Users, Building2, Navigation, ExternalLink } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import {
+  Organisation,
+  Resource,
+  DispatchBroadcast,
+  JournalistProfile,
+} from "@/types/newsroom";
+import { Navigation, Radio, Camera, Users } from "lucide-react";
+import type * as LeafletNS from "leaflet";
 
 interface GeographicMapProps {
   organisations: Organisation[];
   resources: Resource[];
+  broadcasts?: DispatchBroadcast[];
   experts: JournalistProfile[];
   selectedCity: string;
   onSelectCity: (city: string) => void;
   onRequestResource?: (resource: Resource) => void;
+  onSelectBroadcast?: (broadcast: DispatchBroadcast) => void;
 }
 
-const CITY_COORDS: Record<
+const CITY_VIEWPORTS: Record<
   string,
-  { xPercent: number; yPercent: number; lat: string; lng: string; region: string }
+  { center: [number, number]; zoom: number }
 > = {
-  Bulawayo: {
-    xPercent: 34,
-    yPercent: 68,
-    lat: "20.1489° S",
-    lng: "28.5806° E",
-    region: "Matabeleland Hub",
-  },
-  Harare: {
-    xPercent: 62,
-    yPercent: 28,
-    lat: "17.8252° S",
-    lng: "31.0335° E",
-    region: "Mashonaland Hub",
-  },
-  Mutare: {
-    xPercent: 82,
-    yPercent: 45,
-    lat: "18.9707° S",
-    lng: "32.6709° E",
-    region: "Manicaland Eastern Corridor",
-  },
+  All: { center: [-19.05, 30.15], zoom: 6 },
+  Bulawayo: { center: [-20.154, 28.586], zoom: 13 },
+  Harare: { center: [-17.827, 31.038], zoom: 13 },
+  Mutare: { center: [-18.9707, 32.6709], zoom: 12 },
 };
 
 export default function GeographicMap({
   organisations,
   resources,
+  broadcasts = [],
   experts,
   selectedCity,
   onSelectCity,
   onRequestResource,
+  onSelectBroadcast,
 }: GeographicMapProps) {
-  const [mapMode, setMapMode] = useState<"tactical" | "osm">("tactical");
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<LeafletNS.Map | null>(null);
+  const layerGroupRef = useRef<LeafletNS.LayerGroup | null>(null);
 
-  const cities = ["Bulawayo", "Harare", "Mutare"];
+  // Initialize Leaflet map once on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initMap() {
+      if (!mapContainerRef.current || mapInstanceRef.current) return;
+      const L = await import("leaflet");
+      if (!isMounted || !mapContainerRef.current) return;
+
+      const initialView =
+        CITY_VIEWPORTS[selectedCity] || CITY_VIEWPORTS.All;
+
+      const map = L.map(mapContainerRef.current, {
+        center: initialView.center,
+        zoom: initialView.zoom,
+        zoomControl: true,
+      });
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
+          subdomains: "abcd",
+          maxZoom: 19,
+        }
+      ).addTo(map);
+
+      const layerGroup = L.layerGroup().addTo(map);
+      mapInstanceRef.current = map;
+      layerGroupRef.current = layerGroup;
+
+      renderMapMarkers(L);
+    }
+
+    initMap();
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fly to city when selectedCity changes
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const target = CITY_VIEWPORTS[selectedCity] || CITY_VIEWPORTS.All;
+    map.flyTo(target.center, target.zoom, { duration: 0.9 });
+  }, [selectedCity]);
+
+  // Re-render markers and dispatch radius circles when data changes
+  useEffect(() => {
+    async function updateLayers() {
+      if (!mapInstanceRef.current || !layerGroupRef.current) return;
+      const L = await import("leaflet");
+      renderMapMarkers(L);
+    }
+    updateLayers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resources, broadcasts, experts, selectedCity]);
+
+  function renderMapMarkers(L: typeof LeafletNS) {
+    const group = layerGroupRef.current;
+    if (!group) return;
+    group.clearLayers();
+
+    // 1. Draw inDrive-style Dispatch Broadcast Radius Rings & Markers
+    broadcasts.forEach((b) => {
+      if (selectedCity !== "All" && b.city !== selectedCity) return;
+
+      // Dispatch Radius Circle (in meters)
+      L.circle([b.coordinates.lat, b.coordinates.lng], {
+        radius: b.radiusKm * 250, // visual scaled radius for city/regional view
+        color: b.status === "Matched & Dispatched" ? "#10b981" : "#f59e0b",
+        fillColor: b.status === "Matched & Dispatched" ? "#10b981" : "#f59e0b",
+        fillOpacity: 0.1,
+        weight: 1.5,
+        dashArray: "5, 5",
+      }).addTo(group);
+
+      const broadcastIcon = L.divIcon({
+        className: "custom-dispatch-icon",
+        html: `<div style="display:flex;align-items:center;gap:4px;background:#f59e0b;color:#020617;font-weight:700;font-size:10px;padding:3px 8px;border-radius:999px;border:2px solid #fef3c7;box-shadow:0 4px 12px rgba(245,158,11,0.5);white-space:nowrap;">
+          <span>📡 NEED</span>
+          <span>$${b.offeredRateUsd}/d</span>
+        </div>`,
+        iconSize: [90, 24],
+        iconAnchor: [45, 12],
+      });
+
+      const marker = L.marker([b.coordinates.lat, b.coordinates.lng], {
+        icon: broadcastIcon,
+      }).addTo(group);
+
+      marker.bindPopup(`
+        <div style="min-width:210px;font-size:12px;line-height:1.4;">
+          <div style="font-size:10px;font-family:monospace;color:#fbbf24;text-transform:uppercase;font-weight:700;">
+            inDrive Field Broadcast • ${b.urgency}
+          </div>
+          <div style="font-weight:700;margin-top:3px;color:#fff;">${b.title}</div>
+          <div style="color:#94a3b8;font-size:11px;margin-top:4px;">
+            Window: ${b.neededWindow}<br/>
+            Offer: <strong style="color:#34d399;">$${b.offeredRateUsd}/day</strong> (${b.offeredTerms})<br/>
+            Active Bids: <strong>${b.bids.length}</strong>
+          </div>
+        </div>
+      `);
+
+      marker.on("click", () => {
+        if (onSelectBroadcast) onSelectBroadcast(b);
+      });
+    });
+
+    // 2. Draw Equipment Resource Markers
+    resources.forEach((res, idx) => {
+      if (selectedCity !== "All" && res.city !== selectedCity) return;
+      const owner = organisations.find((o) => o.id === res.ownerOrgId);
+      // Slight offset so overlapping city markers are all clickable
+      const latOffset = (idx % 3 - 1) * 0.0035;
+      const lngOffset = (Math.floor(idx / 3) - 0.5) * 0.0035;
+
+      const isAvail = res.status === "Available";
+      const bg = isAvail ? "#14b8a6" : "#475569";
+      const fg = isAvail ? "#020617" : "#e2e8f0";
+
+      const gearIcon = L.divIcon({
+        className: "custom-gear-icon",
+        html: `<div style="display:flex;align-items:center;gap:4px;background:${bg};color:${fg};font-weight:700;font-size:10px;padding:3px 7px;border-radius:6px;border:1px solid #99f6e4;box-shadow:0 4px 10px rgba(0,0,0,0.5);white-space:nowrap;">
+          <span>🎥 ${res.city}</span>
+          <span>${res.suggestedRateUsd === 0 ? "FREE" : `$${res.suggestedRateUsd}`}</span>
+        </div>`,
+        iconSize: [84, 24],
+        iconAnchor: [42, 12],
+      });
+
+      const marker = L.marker(
+        [res.coordinates.lat + latOffset, res.coordinates.lng + lngOffset],
+        { icon: gearIcon }
+      ).addTo(group);
+
+      marker.bindPopup(`
+        <div style="min-width:210px;font-size:12px;line-height:1.4;">
+          <div style="font-size:10px;font-family:monospace;color:#2dd4bf;">
+            ${res.category} • SN: ${res.serialNumber}
+          </div>
+          <div style="font-weight:700;margin-top:2px;color:#fff;">${res.title}</div>
+          <div style="color:#cbd5e1;font-size:11px;margin-top:4px;">
+            Owner: <strong>${owner?.shortName || res.ownerOrgId}</strong><br/>
+            Status: <strong>${res.status}</strong> • Rate: <strong>$${res.suggestedRateUsd}/day</strong>
+          </div>
+        </div>
+      `);
+
+      marker.on("click", () => {
+        if (onRequestResource && res.status === "Available") {
+          onRequestResource(res);
+        }
+      });
+    });
+  }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#11192c] overflow-hidden">
-      {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 px-4 py-3 bg-slate-900/60">
+    <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+      {/* Map Header Controls */}
+      <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-400">
+          <div className="p-1.5 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300">
             <Navigation className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-              Geographic Resource & Expertise Discovery
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
-                PostGIS + OpenStreetMap
+            <h3 className="text-xs font-bold text-white flex items-center gap-2">
+              Live Leaflet Geospatial Dispatch & Equipment Map
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
+                Leaflet + PostGIS Coords
               </span>
             </h3>
-            <p className="text-xs text-slate-400">
-              Click a regional hub to filter nearby cameras, studios, field kits, and verified specialists
+            <p className="text-[11px] text-slate-400">
+              Click any <span className="text-amber-300 font-medium">📡 NEED</span> marker to bid/counter-offer, or any <span className="text-teal-300 font-medium">🎥 Gear</span> marker to book equipment
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onSelectCity("All")}
-            className={`px-2.5 py-1 rounded text-xs font-medium transition ${
-              selectedCity === "All"
-                ? "bg-teal-500 text-slate-950 font-semibold"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
-          >
-            All Nodes ({resources.length})
-          </button>
-          {cities.map((city) => (
+        {/* City FlyTo Controls */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(["All", "Bulawayo", "Harare", "Mutare"] as const).map((city) => (
             <button
               key={city}
-              onClick={() => onSelectCity(city === selectedCity ? "All" : city)}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition ${
+              onClick={() => onSelectCity(city)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                 selectedCity === city
                   ? "bg-teal-500 text-slate-950 font-semibold"
                   : "bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
-              {city}
+              {city === "All" ? "All Zimbabwe (6x)" : `${city} Hub (13x)`}
             </button>
           ))}
-          <div className="h-4 w-px bg-slate-700 mx-1" />
-          <button
-            onClick={() => setMapMode(mapMode === "tactical" ? "osm" : "tactical")}
-            className="px-2.5 py-1 rounded text-xs bg-slate-800/90 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1"
-            title="Switch between Tactical Network Map and Live OpenStreetMap Embed"
-          >
-            <ExternalLink className="w-3 h-3 text-teal-400" />
-            {mapMode === "tactical" ? "Live OSM Tile View" : "Tactical Node View"}
-          </button>
         </div>
       </div>
 
-      {/* Map Body */}
-      <div className="grid grid-cols-1 lg:grid-cols-3">
-        {/* Left 2 Columns: Interactive Spatial Canvas or Live OSM iframe */}
-        <div className="lg:col-span-2 relative min-h-[300px] bg-[#0a101f] border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
-          {mapMode === "osm" ? (
-            <div className="w-full h-full min-h-[300px] relative">
-              <iframe
-                title="OpenStreetMap Zimbabwe Network Nodes"
-                className="w-full h-[310px] opacity-85 contrast-125"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=25.5%2C-22.2%2C33.2%2C-15.8&layer=mapnik&marker=-20.1489%2C28.5806"
-              />
-              <div className="absolute bottom-2 left-2 bg-slate-950/90 border border-slate-800 px-2.5 py-1 rounded text-[11px] text-slate-300">
-                OpenStreetMap Contributors • Bulawayo (-20.1489, 28.5806) • Harare (-17.8252, 31.0335)
-              </div>
-            </div>
-          ) : (
-            <div className="relative w-full h-[310px] p-4 select-none">
-              {/* Coordinate Grid Background */}
-              <svg
-                className="absolute inset-0 w-full h-full opacity-25"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <pattern
-                    id="geo-grid"
-                    width="36"
-                    height="36"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <path
-                      d="M 36 0 L 0 0 0 36"
-                      fill="none"
-                      stroke="#1e293b"
-                      strokeWidth="1"
-                    />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#geo-grid)" />
-                {/* Connecting Fibre / Collaboration Corridors */}
-                <line
-                  x1="34%"
-                  y1="68%"
-                  x2="62%"
-                  y2="28%"
-                  stroke="#14b8a6"
-                  strokeWidth="2"
-                  strokeDasharray="6 4"
-                />
-                <line
-                  x1="62%"
-                  y1="28%"
-                  x2="82%"
-                  y2="45%"
-                  stroke="#0ea5e9"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 4"
-                />
-                <line
-                  x1="34%"
-                  y1="68%"
-                  x2="82%"
-                  y2="45%"
-                  stroke="#64748b"
-                  strokeWidth="1"
-                  strokeDasharray="3 5"
-                />
-              </svg>
+      {/* Interactive Leaflet Map Container */}
+      <div className="relative w-full h-[340px]">
+        <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-              {/* Top-left Telemetry legend */}
-              <div className="relative z-10 inline-flex flex-col gap-1 bg-slate-900/90 border border-slate-800/90 rounded-lg px-3 py-2 text-xs">
-                <div className="font-mono text-[11px] text-teal-400 font-semibold">
-                  SOUTHERN AFRICA COLLABORATION MESH
-                </div>
-                <div className="flex items-center gap-3 text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-teal-400 inline-block" /> Active Hub
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-4 border-t border-dashed border-teal-400 inline-block" /> Co-Investigation Link
-                  </span>
-                </div>
-              </div>
-
-              {/* Plot City Markers */}
-              {cities.map((city) => {
-                const coord = CITY_COORDS[city];
-                const cityOrgs = organisations.filter((o) => o.city === city);
-                const cityRes = resources.filter((r) => r.city === city);
-                const availRes = cityRes.filter((r) => r.status === "Available");
-                const cityExp = experts.filter((e) => e.city === city);
-                const isSelected = selectedCity === city;
-
-                return (
-                  <button
-                    key={city}
-                    onClick={() => onSelectCity(isSelected ? "All" : city)}
-                    style={{ left: `${coord.xPercent}%`, top: `${coord.yPercent}%` }}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 group text-left transition-all z-20`}
-                  >
-                    <div className="relative flex items-center justify-center">
-                      <span
-                        className={`animate-ping absolute inline-flex h-8 w-8 rounded-full opacity-40 ${
-                          isSelected ? "bg-teal-400" : "bg-sky-400"
-                        }`}
-                      />
-                      <div
-                        className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg transition ${
-                          isSelected
-                            ? "bg-teal-500 text-slate-950 border-teal-300 font-semibold scale-105"
-                            : "bg-slate-900/95 text-slate-100 border-slate-700 hover:border-teal-400"
-                        }`}
-                      >
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-xs">{city}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                            isSelected
-                              ? "bg-slate-950/25 text-slate-950"
-                              : "bg-teal-500/20 text-teal-300"
-                          }`}
-                        >
-                          {availRes.length} gear
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Mini card under pin */}
-                    <div className="mt-1.5 bg-slate-950/95 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-300 shadow-xl min-w-[165px]">
-                      <div className="font-mono text-[10px] text-slate-400">
-                        {coord.lat}, {coord.lng}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 mt-0.5 text-slate-200">
-                        <span>{cityOrgs.length} Newsroom(s)</span>
-                        <span className="text-teal-400">{cityExp.length} Experts</span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Bottom caption */}
-              <div className="absolute bottom-3 right-3 text-[11px] text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded border border-slate-800">
-                Showing {selectedCity === "All" ? "all 3 regional corridors" : `${selectedCity} corridor`}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Nearby Equipment & Hub Summary */}
-        <div className="p-4 flex flex-col justify-between bg-[#0f172a]">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-teal-400">
-                {selectedCity === "All" ? "Network-Wide Pool" : `${selectedCity} Equipment Pool`}
-              </span>
-              <span className="text-xs text-slate-400">
-                {
-                  resources.filter(
-                    (r) => selectedCity === "All" || r.city === selectedCity
-                  ).length
-                }{" "}
-                items listed
-              </span>
-            </div>
-
-            <div className="space-y-2.5 max-h-[225px] overflow-y-auto pr-1">
-              {resources
-                .filter((r) => selectedCity === "All" || r.city === selectedCity)
-                .map((res) => {
-                  const owner = organisations.find((o) => o.id === res.ownerOrgId);
-                  return (
-                    <div
-                      key={res.id}
-                      className="p-2.5 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 transition flex flex-col gap-1.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-medium text-slate-100 leading-snug">
-                          {res.title}
-                        </span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                            res.status === "Available"
-                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                              : res.status === "Requested"
-                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                              : "bg-slate-800 text-slate-400"
-                          }`}
-                        >
-                          {res.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>
-                          {owner?.shortName} • {res.city}
-                        </span>
-                        {onRequestResource && res.status === "Available" && (
-                          <button
-                            onClick={() => onRequestResource(res)}
-                            className="text-teal-400 hover:text-teal-300 font-medium underline cursor-pointer"
-                          >
-                            Request Gear →
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-teal-400" />
-              {organisations.length} Verified Newsrooms
-            </span>
-            <span className="flex items-center gap-1">
-              <Camera className="w-3.5 h-3.5 text-sky-400" />
-              Peer-to-Peer Handover Logged
-            </span>
-          </div>
+        {/* Map Legend Overlay */}
+        <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-[11px] text-slate-300 flex flex-wrap items-center gap-4 shadow-xl pointer-events-none">
+          <span className="flex items-center gap-1.5">
+            <Radio className="w-3.5 h-3.5 text-amber-400" />
+            <span>Amber Circle = Active Field Broadcast Radius</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Camera className="w-3.5 h-3.5 text-teal-400" />
+            <span>Teal Pin = Available Equipment</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-sky-400" />
+            <span>{organisations.length} Newsroom Nodes</span>
+          </span>
         </div>
       </div>
     </div>

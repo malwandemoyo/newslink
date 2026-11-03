@@ -27,6 +27,7 @@ export type ResourceStatus = "Available" | "Requested" | "Booked" | "In Maintena
 export interface Resource {
   id: string;
   title: string;
+  serialNumber: string;
   category: ResourceCategory;
   ownerOrgId: OrgId;
   city: string;
@@ -34,12 +35,18 @@ export interface Resource {
   status: ResourceStatus;
   condition: "Excellent" | "Good" | "Field-Tested";
   specs: string[];
-  dailyTerms: string; // e.g., "Peer Exchange (0 USD / Deposit Waived for Verified Network)"
+  dailyTerms: string;
+  suggestedRateUsd: number; // 0 for reciprocal network loan, or daily pool contribution
   collateralRequirement: string;
   availableWindow: string;
 }
 
-export type RequestStatus = "Pending Approval" | "Counter-Offer Sent" | "Approved" | "Checked Out" | "Returned";
+export type RequestStatus =
+  | "Pending Approval"
+  | "Counter-Offer Sent"
+  | "Approved"
+  | "Checked Out"
+  | "Returned";
 
 export interface ResourceRequest {
   id: string;
@@ -50,11 +57,52 @@ export interface ResourceRequest {
   purpose: string;
   requestedDates: string;
   proposedTerms: string;
+  offeredRateUsd: number;
+  counterOfferTerms?: string;
+  counterRateUsd?: number;
   status: RequestStatus;
+  handoverPin: string;
+  serialNumberVerified?: boolean;
+  batteryAndMediaChecked?: boolean;
   handoverNote?: string;
   conditionOnCheckout?: string;
   conditionOnReturn?: string;
   createdAt: string;
+}
+
+export interface DispatchBid {
+  id: string;
+  broadcastId: string;
+  bidderOrgId: OrgId;
+  bidderName: string;
+  resourceTitle: string;
+  proposedRateUsd: number;
+  counterTerms: string;
+  etaNote: string;
+  distanceKm: number;
+  status: "Pending" | "Accepted" | "Declined";
+  createdAt: string;
+}
+
+export interface DispatchBroadcast {
+  id: string;
+  requesterOrgId: OrgId;
+  investigationId?: string;
+  title: string;
+  needType: "Equipment Only" | "Equipment + Field Operator" | "Specialist Freelancer";
+  category: ResourceCategory;
+  city: string;
+  coordinates: { lat: number; lng: number };
+  radiusKm: number;
+  neededWindow: string;
+  offeredRateUsd: number;
+  offeredTerms: string;
+  urgency: "Urgent (Within 24h)" | "Standard";
+  status: "Open for Bids" | "Counter-Offers Active" | "Matched & Dispatched" | "Completed";
+  acceptedBidId?: string;
+  handoverPin?: string;
+  createdAt: string;
+  bids: DispatchBid[];
 }
 
 export interface JournalistProfile {
@@ -210,7 +258,13 @@ export interface AuditLogEntry {
   timestamp: string;
   actorName: string;
   actorOrgId: OrgId;
-  category: "Resource Booking" | "Investigation ACL" | "AI Query" | "Human Verification" | "Story Syndication";
+  category:
+    | "Resource Booking"
+    | "inDrive Dispatch"
+    | "Investigation ACL"
+    | "AI Query"
+    | "Human Verification"
+    | "Story Syndication";
   action: string;
   resourceTarget: string;
 }
