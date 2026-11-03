@@ -1,0 +1,107 @@
+# Connected Newsroom — Open-Source Self-Hosted Infrastructure Stack
+# Designed for independent media networks: Modular Monolith + OSS Companions
+# Public access via Caddy HTTPS; private node administration via Tailscale/Headscale.
+
+services:
+  # 1. Reverse Proxy & Automatic HTTPS (Public Ingress)
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - portal
+    networks:
+      - public_ingress
+      - newsroom_internal
+
+  # 2. Connected Newsroom Unified Portal (Next.js App + Server-Side AI Gateway)
+  portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://newsroom:${POSTGRES_PASSWORD:-changeme_in_prod}@postgres:5432/connected_newsroom
+      - QDRANT_URL=http://qdrant:6333
+      - LITELLM_BASE_URL=http://litellm:4000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEFAULT_AI_MODE=${DEFAULT_AI_MODE:-local_first}
+    depends_on:
+      - postgres
+      - qdrant
+    networks:
+      - newsroom_internal
+
+  # 3. Primary Database + Geospatial Discovery (PostgreSQL 16 + PostGIS + Row-Level Security)
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: newsroom
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_prod}
+      POSTGRES_DB: connected_newsroom
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - newsroom_internal
+
+  # 4. Vector Search for Permission-Aware Document RAG (Qdrant)
+  # Enforces newsroom_id and investigation_id payload filtering on every query
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - newsroom_internal
+
+  # 5. Local-First AI Model Gateway (LiteLLM + Ollama)
+  # Routes sensitive/unpublished leaks to local Ollama; approved public reports to Gemini
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OLLAMA_API_BASE=http://ollama:11434
+    networks:
+      - newsroom_internal
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - newsroom_internal
+
+  # 6. Private Object Storage for Evidence & Story Packages (SeaweedFS / MinIO S3-Compatible)
+  storage:
+    image: chrislusf/seaweedfs:latest
+    command: "server -s3 -dir=/data"
+    restart: unless-stopped
+    volumes:
+      - storage_data:/data
+    networks:
+      - newsroom_internal
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  qdrant_data:
+  ollama_models:
+  storage_data:
+
+networks:
+  public_ingress:
+    driver: bridge
+  newsroom_internal:
+    driver: bridge
+    internal: true
