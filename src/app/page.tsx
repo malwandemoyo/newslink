@@ -32,17 +32,14 @@ import {
   SyndicationRequest,
   AuditLogEntry,
 } from "@/types/newsroom";
-import GeographicMap from "@/components/GeographicMap";
 import ResourceDispatchView from "@/components/ResourceDispatchView";
 import InvestigationWorkspaceView from "@/components/InvestigationWorkspaceView";
-import AICopilotView from "@/components/AICopilotView";
 import SecurityAuditView from "@/components/SecurityAuditView";
 import {
   LayoutDashboard,
-  Radio,
+  Camera,
   Users,
   FolderGit2,
-  Bot,
   Newspaper,
   Shield,
   ShieldCheck,
@@ -53,7 +50,10 @@ import {
   MapPin,
   Search,
   FileCheck,
-  Camera,
+  ArrowRight,
+  BookOpen,
+  Sparkles,
+  KeyRound,
 } from "lucide-react";
 
 type NavSection =
@@ -61,16 +61,15 @@ type NavSection =
   | "resources"
   | "expertise"
   | "investigations"
-  | "ai_copilot"
   | "news_exchange"
   | "security_audit";
 
 export default function ConnectedNewsroomApp() {
   const [mounted, setMounted] = useState<boolean>(false);
-  const [activeNav, setActiveNav] = useState<NavSection>("investigations");
+  const [activeNav, setActiveNav] = useState<NavSection>("overview");
   const [activeOrgId, setActiveOrgId] = useState<string>("org-byo");
 
-  // Server-Backed SQLite State
+  // Server-Backed State
   const [organisations, setOrganisations] = useState<Organisation[]>(
     INITIAL_ORGANISATIONS
   );
@@ -104,12 +103,12 @@ export default function ConnectedNewsroomApp() {
   const [auditLogs, setAuditLogs] =
     useState<AuditLogEntry[]>(INITIAL_AUDIT_LOGS);
 
-  // Filters & Toast
+  // Filters, Story Reader Modal & Toast
   const [selectedCity, setSelectedCity] = useState<string>("All");
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [languageFilter, setLanguageFilter] = useState<string>("All");
+  const [readingStory, setReadingStory] = useState<StoryPackage | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [dbSynced, setDbSynced] = useState<boolean>(false);
 
   const activeOrg =
     organisations.find((o) => o.id === activeOrgId) || organisations[0];
@@ -148,10 +147,8 @@ export default function ConnectedNewsroomApp() {
       setSyndicationRequests(data.syndicationRequests as SyndicationRequest[]);
     if (Array.isArray(data.auditLogs))
       setAuditLogs(data.auditLogs as AuditLogEntry[]);
-    setDbSynced(true);
   }, []);
 
-  // Load initial state from SQLite API
   useEffect(() => {
     setMounted(true);
     fetch("/api/state")
@@ -159,9 +156,7 @@ export default function ConnectedNewsroomApp() {
       .then((data) => {
         if (!data.error) applyServerState(data);
       })
-      .catch(() => {
-        // Fallback to seed if offline
-      });
+      .catch(() => {});
   }, [applyServerState]);
 
   const mutateServerState = async (
@@ -185,7 +180,7 @@ export default function ConnectedNewsroomApp() {
         return false;
       }
     } catch {
-      triggerToast("Network error communicating with SQLite API");
+      triggerToast("Network error communicating with backend");
       return false;
     }
   };
@@ -194,7 +189,7 @@ export default function ConnectedNewsroomApp() {
     await mutateServerState(
       "reset_db",
       {},
-      "SQLite database reset to clean seed state."
+      "Workspace reset to starting state."
     );
     setActiveOrgId("org-byo");
   };
@@ -218,7 +213,7 @@ export default function ConnectedNewsroomApp() {
         scopeNote:
           "Cross-reference procurement ledger #URDC-2026-09 and verify EMA water sample tables.",
       },
-      `Invited ${expert.name} to Project Umzingwane (Saved to SQLite).`
+      `${expert.name} added to the investigation team!`
     );
   };
 
@@ -233,14 +228,14 @@ export default function ConnectedNewsroomApp() {
       !targetTask.signedOffBy
     ) {
       triggerToast(
-        "SAFEGUARD: Tasks cannot enter 'Ready for Exchange' without Human Journalist Sign-Off!"
+        "Please click 'Sign Off Check' on this card before moving it to Ready for Exchange."
       );
       return;
     }
     await mutateServerState(
       "move_kanban_task",
       { taskId, newColumn },
-      `Moved task to '${newColumn}'.`
+      `Moved task to '${newColumn.replace("_", " ")}'.`
     );
   };
 
@@ -248,7 +243,7 @@ export default function ConnectedNewsroomApp() {
     await mutateServerState(
       "signoff_kanban_task",
       { taskId },
-      `Recorded human editorial verification sign-off in SQLite.`
+      `Task marked as human-verified.`
     );
   };
 
@@ -256,7 +251,7 @@ export default function ConnectedNewsroomApp() {
     await mutateServerState(
       "add_kanban_task",
       { task: newTask },
-      "Added investigation task to Kanban board."
+      "Added new task to board."
     );
   };
 
@@ -266,7 +261,7 @@ export default function ConnectedNewsroomApp() {
     );
     if (alreadyRequested) {
       triggerToast(
-        `${activeOrg.shortName} already holds an active republication license for this story.`
+        `${activeOrg.shortName} already has republication rights for this story.`
       );
       return;
     }
@@ -277,7 +272,7 @@ export default function ConnectedNewsroomApp() {
         originOrgId: story.originOrgId,
         agreedAttribution: story.attributionRequirement,
       },
-      `Syndication license unlocked for ${activeOrg.name} with mandatory attribution lock.`
+      `Story licensed for republication by ${activeOrg.name}!`
     );
   };
 
@@ -285,89 +280,84 @@ export default function ConnectedNewsroomApp() {
     return null;
   }
 
+  // Workflow completion indicators
+  const gearMatched =
+    dispatchBroadcasts.some((b) => b.status === "Matched & Dispatched") ||
+    resourceRequests.some((r) => r.status === "Approved");
+  const expertMatched = collaborations.length > 1;
+  const currentDraft = investigationDrafts[0];
+  const allGatesSigned =
+    currentDraft?.approvals.every((a) => a.approved) ?? false;
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#0b1120] text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 border border-teal-500/60 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 border border-teal-500 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
-          <span className="text-xs font-medium leading-snug">{toastMessage}</span>
+          <span className="text-sm font-medium leading-snug">
+            {toastMessage}
+          </span>
         </div>
       )}
 
-      {/* Left Sidebar Navigation */}
-      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#0d1526] flex flex-col justify-between">
+      {/* Left Sidebar Navigation — Clean, Spacious, 6 Human-Friendly Items */}
+      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-[#0d1526] flex flex-col justify-between">
         <div>
-          <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center text-slate-950 font-black text-sm shadow">
-                CN
-              </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight text-white leading-none">
-                  Connected Newsroom
-                </h1>
-                <p className="text-[11px] text-teal-400 font-medium mt-1">
-                  Stronger newsrooms. Better journalism.
-                </p>
-              </div>
+          {/* Brand Logo */}
+          <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-950 font-black text-base shadow-md">
+              CN
+            </div>
+            <div>
+              <h1 className="text-base font-bold tracking-tight text-white leading-none">
+                Connected Newsroom
+              </h1>
+              <p className="text-xs text-teal-400 font-medium mt-1">
+                Stronger newsrooms.
+              </p>
             </div>
           </div>
 
-          <div className="mx-3 mt-3 p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-            <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Editorial Independence
-            </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed">
-              Human journalists verify primary evidence and sign off all publication gates.
-            </p>
-          </div>
-
-          <nav className="p-3 space-y-1">
+          {/* Primary Navigation */}
+          <nav className="p-3.5 space-y-1.5">
             {(
               [
                 {
                   id: "overview",
-                  label: "Network Overview",
+                  label: "My Newsroom Desk",
                   icon: LayoutDashboard,
-                  badge: `${organisations.length} Orgs`,
                 },
                 {
                   id: "resources",
-                  label: "Resource & Field Dispatch",
-                  icon: Radio,
-                  badge: `${dispatchBroadcasts.length} Live`,
+                  label: "Gear & Field Crew",
+                  icon: Camera,
+                  count: `${
+                    resources.filter((r) => r.status === "Available").length
+                  } free`,
                 },
                 {
                   id: "expertise",
-                  label: "People & Expertise",
+                  label: "People & Experts",
                   icon: Users,
-                  badge: `${experts.length}`,
+                  count: `${experts.length}`,
                 },
                 {
                   id: "investigations",
-                  label: "Investigation Repos",
+                  label: "Investigation Workspace",
                   icon: FolderGit2,
-                  badge: "Git+PR",
-                },
-                {
-                  id: "ai_copilot",
-                  label: "AI Research Copilot",
-                  icon: Bot,
-                  badge: `${documents.length} Docs`,
+                  count: "Active",
                 },
                 {
                   id: "news_exchange",
-                  label: "News Exchange",
+                  label: "News Wire & Exchange",
                   icon: Newspaper,
-                  badge: `${stories.length}`,
+                  count: `${stories.length}`,
                 },
                 {
                   id: "security_audit",
-                  label: "ACLs & Audit Log",
+                  label: "Permissions & Activity",
                   icon: Shield,
-                  badge: `${auditLogs.length}`,
                 },
               ] as const
             ).map((item) => {
@@ -377,228 +367,379 @@ export default function ConnectedNewsroomApp() {
                 <button
                   key={item.id}
                   onClick={() => setActiveNav(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition cursor-pointer ${
                     isActive
-                      ? "bg-teal-500/15 text-teal-300 border border-teal-500/30 font-semibold"
-                      : "text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent"
+                      ? "bg-teal-500 text-slate-950 font-bold shadow-md"
+                      : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
                   }`}
                 >
-                  <span className="flex items-center gap-2.5">
+                  <span className="flex items-center gap-3">
                     <Icon
                       className={`w-4 h-4 ${
-                        isActive ? "text-teal-400" : "text-slate-400"
+                        isActive ? "text-slate-950" : "text-teal-400"
                       }`}
                     />
                     {item.label}
                   </span>
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                      isActive
-                        ? "bg-teal-500/20 text-teal-200"
-                        : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                  {"count" in item && item.count && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        isActive
+                          ? "bg-slate-950/20 text-slate-950"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        <div className="p-3 border-t border-slate-800/80 space-y-2 bg-slate-950/40">
-          <div className="text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Database Engine</span>
-            <span className="text-emerald-400 font-mono text-[10px]">
-              ● {dbSynced ? "SQLite WAL Active" : "Connecting..."}
-            </span>
+        {/* Sidebar Footer: Principle & Reset */}
+        <div className="p-4 border-t border-slate-800/80 space-y-3 bg-slate-950/30">
+          <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800/90 text-xs text-slate-300 space-y-1">
+            <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
+              <ShieldCheck className="w-4 h-4" />
+              Journalists in Control
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              AI assists research and citations. Humans verify facts and approve publication.
+            </p>
           </div>
+
           <button
             onClick={handleResetDatabase}
-            className="w-full py-1.5 px-3 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="w-full py-2 px-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset SQLite Database
+            Reset Demo Data
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="border-b border-slate-800/90 bg-[#0f172a]/90 backdrop-blur px-5 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Active Newsroom:</span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {organisations.map((org) => {
-                const isCurrent = org.id === activeOrgId;
-                return (
-                  <button
-                    key={org.id}
-                    onClick={() => {
-                      setActiveOrgId(org.id);
-                      triggerToast(
-                        `Switched active newsroom context to ${org.name} (${org.city}).`
-                      );
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer flex items-center gap-1.5 ${
-                      isCurrent
-                        ? "bg-teal-500 text-slate-950 border-teal-300 font-semibold shadow"
-                        : "bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700"
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    {org.shortName}
-                    <span
-                      className={`text-[10px] px-1 rounded ${
-                        isCurrent
-                          ? "bg-slate-950/20 text-slate-950"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      {org.city}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Top Bar: Active Newsroom Switcher + 4-Step Workflow Progress */}
+        <header className="border-b border-slate-800/80 bg-[#0f172a]/95 backdrop-blur px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-slate-400 mr-1">
+              Viewing as Newsroom:
+            </span>
+            {organisations.map((org) => {
+              const isCurrent = org.id === activeOrgId;
+              return (
+                <button
+                  key={org.id}
+                  onClick={() => {
+                    setActiveOrgId(org.id);
+                    triggerToast(`Now viewing as ${org.name} (${org.city}).`);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                    isCurrent
+                      ? "bg-teal-500/20 text-teal-300 border-teal-500/50 shadow-sm"
+                      : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  {org.shortName}
+                  <span className="text-[11px] opacity-75">({org.city})</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px]">
-              SQLite + Leaflet + File Parser
-            </span>
+          {/* Interactive 4-Step Story Workflow Pills */}
+          <div className="hidden xl:flex items-center gap-2 text-xs">
+            {(
+              [
+                {
+                  num: 1,
+                  label: "1. Gear & Crew",
+                  nav: "resources" as NavSection,
+                  done: gearMatched,
+                },
+                {
+                  num: 2,
+                  label: "2. Specialists",
+                  nav: "expertise" as NavSection,
+                  done: expertMatched,
+                },
+                {
+                  num: 3,
+                  label: "3. Research & Write",
+                  nav: "investigations" as NavSection,
+                  done: allGatesSigned,
+                },
+                {
+                  num: 4,
+                  label: "4. News Wire",
+                  nav: "news_exchange" as NavSection,
+                  done: stories.length > 2,
+                },
+              ] as const
+            ).map((st) => (
+              <button
+                key={st.num}
+                onClick={() => setActiveNav(st.nav)}
+                className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition cursor-pointer ${
+                  activeNav === st.nav
+                    ? "bg-teal-500 text-slate-950 border-teal-400 font-bold"
+                    : st.done
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                    : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {st.done && <CheckCircle2 className="w-3.5 h-3.5" />}
+                {st.label}
+              </button>
+            ))}
           </div>
         </header>
 
-        <main className="p-5 flex-1 space-y-6 overflow-y-auto">
-          {/* 1. OVERVIEW SECTION */}
+        {/* Main Workspace Body */}
+        <main className="p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto space-y-8 overflow-y-auto">
+          {/* 1. MY NEWSROOM DESK (OVERVIEW) */}
           {activeNav === "overview" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div
-                  onClick={() => setActiveNav("resources")}
-                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-amber-500/40 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Live Field Broadcasts</span>
-                    <Radio className="w-4 h-4 text-amber-400" />
+            <div className="space-y-8">
+              {/* Welcome & Active Story Hero Card */}
+              <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-[#13203a] via-[#0f172a] to-[#0d2229] p-6 lg:p-8 shadow-xl space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div className="space-y-2 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Active Desk: {activeOrg.name} ({activeOrg.city})
+                    </div>
+                    <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+                      Umzingwane River Water & Lithium Tailings Investigation
+                    </h2>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      Co-reporting with <strong>CITE ZW</strong> and{" "}
+                      <strong>Harare Investigative Collective</strong>. Follow the 3 workflow cards below to borrow field gear, verify the public audit report, and publish to the News Wire.
+                    </p>
                   </div>
-                  <div className="text-2xl font-bold text-white mt-2">
-                    {dispatchBroadcasts.length} Active Needs
-                  </div>
-                  <div className="text-[11px] text-amber-300 mt-1">
-                    {dispatchBroadcasts.reduce((a, b) => a + b.bids.length, 0)}{" "}
-                    partner bids & counter-offers →
-                  </div>
+
+                  <button
+                    onClick={() => setActiveNav("investigations")}
+                    className="px-6 py-3.5 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-sm flex items-center gap-2.5 shadow-lg cursor-pointer shrink-0 transition"
+                  >
+                    Open Investigation Workspace{" "}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <div
-                  onClick={() => setActiveNav("resources")}
-                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Shared Equipment Pool</span>
-                    <Camera className="w-4 h-4 text-teal-400" />
+                {/* 3 Clear Workflow Cards right inside the Hero */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                  {/* Step Card 1 */}
+                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                          Step 1 • Field Gear & Crew
+                        </span>
+                        <Camera className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <h3 className="text-base font-bold text-white">
+                        Sony FX6 Camera & Field Crew
+                      </h3>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        CITE ZW in Bulawayo has offered their 4K Sony FX6 kit + operator for $25/day fuel cover.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveNav("resources")}
+                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                    >
+                      View Gear & Accept Offer →
+                    </button>
                   </div>
-                  <div className="text-2xl font-bold text-white mt-2">
-                    {resources.filter((r) => r.status === "Available").length} /{" "}
-                    {resources.length}
-                  </div>
-                  <div className="text-[11px] text-teal-300 mt-1">
-                    Serialized cameras, drones & studios →
-                  </div>
-                </div>
 
-                <div
-                  onClick={() => setActiveNav("investigations")}
-                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Investigation Repositories</span>
-                    <FolderGit2 className="w-4 h-4 text-sky-400" />
+                  {/* Step Card 2 */}
+                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                          Step 2 • AI Document Research
+                        </span>
+                        <BookOpen className="w-4 h-4 text-teal-400" />
+                      </div>
+                      <h3 className="text-base font-bold text-white">
+                        Verify 2026 EMA Audit Report
+                      </h3>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        Search the 42-page inspection report with exact page citations and distinguish evidence from allegations.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveNav("investigations")}
+                      className="w-full py-2.5 px-4 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                    >
+                      Search Documents & Cite →
+                    </button>
                   </div>
-                  <div className="text-2xl font-bold text-white mt-2">
-                    {kanbanTasks.filter((t) => Boolean(t.signedOffBy)).length} /{" "}
-                    {kanbanTasks.length} Verified
-                  </div>
-                  <div className="text-[11px] text-sky-300 mt-1">
-                    Kanban, Evidence Repo & PR Review Gate →
-                  </div>
-                </div>
 
-                <div
-                  onClick={() => setActiveNav("news_exchange")}
-                  className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>News Exchange Syndications</span>
-                    <Share2 className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-white mt-2">
-                    {stories.reduce((acc, s) => acc + s.republishCount, 0)} Licenses
-                  </div>
-                  <div className="text-[11px] text-emerald-300 mt-1">
-                    Attribution & embargoes locked →
+                  {/* Step Card 3 */}
+                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                          Step 3 • Editorial Sign-Off
+                        </span>
+                        <Share2 className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <h3 className="text-base font-bold text-white">
+                        Sign Off & Syndicate Story
+                      </h3>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {
+                          currentDraft?.approvals.filter((a) => a.approved)
+                            .length
+                        }{" "}
+                        of 3 editors have signed off. Approve the final legal check to publish to the News Wire.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveNav("news_exchange")}
+                      className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                    >
+                      Open News Wire ({stories.length} Stories) →
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <GeographicMap
-                organisations={organisations}
-                resources={resources}
-                broadcasts={dispatchBroadcasts}
-                experts={experts}
-                selectedCity={selectedCity}
-                onSelectCity={setSelectedCity}
-                onRequestResource={() => setActiveNav("resources")}
-                onSelectBroadcast={() => setActiveNav("resources")}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {organisations.map((org) => (
-                  <div
-                    key={org.id}
-                    className={`p-4 rounded-xl border transition flex flex-col justify-between gap-3 ${
-                      org.id === activeOrgId
-                        ? "border-teal-500/60 bg-[#132038]"
-                        : "border-slate-800 bg-[#0f172a]"
-                    }`}
-                  >
+              {/* Action Needed From Your Desk (Live Offers & Approvals) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Live Field Dispatch Offers */}
+                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded border font-medium ${org.badgeColor}`}
-                        >
-                          {org.type}
-                        </span>
-                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-teal-400" />
-                          {org.city}
-                        </span>
-                      </div>
-                      <h3 className="text-sm font-bold text-white">{org.name}</h3>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        {org.description}
+                      <h3 className="text-base font-bold text-white">
+                        Incoming Field Crew & Gear Offers
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Direct peer-to-peer offers on your urgent Bulawayo camera request
                       </p>
                     </div>
+                    <button
+                      onClick={() => setActiveNav("resources")}
+                      className="text-xs text-teal-400 hover:underline font-semibold cursor-pointer"
+                    >
+                      See All →
+                    </button>
+                  </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-1">
-                      {org.specialties.map((sp) => (
-                        <span
-                          key={sp}
-                          className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800"
+                  {dispatchBroadcasts.slice(0, 1).map((b) => (
+                    <div key={b.id} className="space-y-3">
+                      {b.handoverPin && (
+                        <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between text-xs">
+                          <span className="text-emerald-200 font-semibold flex items-center gap-2">
+                            <KeyRound className="w-4 h-4 text-emerald-400" />
+                            Crew Dispatched! Handover PIN:
+                          </span>
+                          <span className="font-mono font-black text-sm px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
+                            {b.handoverPin}
+                          </span>
+                        </div>
+                      )}
+
+                      {b.bids.map((bid) => (
+                        <div
+                          key={bid.id}
+                          className="p-4 rounded-xl border border-slate-800 bg-slate-900/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                         >
-                          {sp}
-                        </span>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-white">
+                                {bid.bidderName}
+                              </span>
+                              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                                ${bid.proposedRateUsd}/day
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300">
+                              {bid.resourceTitle}
+                            </p>
+                            <p className="text-xs text-teal-400">
+                              {bid.etaNote}
+                            </p>
+                          </div>
+
+                          {b.status !== "Matched & Dispatched" ? (
+                            <button
+                              onClick={() =>
+                                mutateServerState(
+                                  "accept_dispatch_bid",
+                                  { broadcastId: b.id, bidId: bid.id },
+                                  "Offer accepted! Handover PIN generated."
+                                )
+                              }
+                              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow"
+                            >
+                              Accept Offer ✓
+                            </button>
+                          ) : (
+                            <span className="text-xs font-semibold text-emerald-400">
+                              {bid.status}
+                            </span>
+                          )}
+                        </div>
                       ))}
                     </div>
+                  ))}
+                </div>
+
+                {/* Right: Participating Newsrooms in the Network */}
+                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Participating Independent Newsrooms
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Click any newsroom to test the platform from their perspective
+                    </p>
                   </div>
-                ))}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {organisations.map((org) => {
+                      const isCurrent = org.id === activeOrgId;
+                      return (
+                        <button
+                          key={org.id}
+                          onClick={() => {
+                            setActiveOrgId(org.id);
+                            triggerToast(`Switched to ${org.name}.`);
+                          }}
+                          className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
+                            isCurrent
+                              ? "border-teal-500 bg-teal-500/10"
+                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-white">
+                              {org.shortName}
+                            </span>
+                            <span className="text-xs text-teal-400 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {org.city}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                            {org.description}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* 2. RESOURCE & FIELD DISPATCH */}
+          {/* 2. GEAR & FIELD CREW EXCHANGE */}
           {activeNav === "resources" && (
             <ResourceDispatchView
               organisations={organisations}
@@ -613,93 +754,95 @@ export default function ConnectedNewsroomApp() {
                 await mutateServerState(
                   "create_resource_request",
                   payload,
-                  "Booking request saved to SQLite & Handover PIN generated!"
+                  "Booking requested & Handover PIN generated!"
                 );
               }}
               onCounterOfferRequest={async (payload) => {
                 await mutateServerState(
                   "counter_offer_request",
                   payload,
-                  `Counter-offer ($${payload.counterRateUsd}/day) sent to requester!`
+                  `Counter-offer ($${payload.counterRateUsd}/day) sent!`
                 );
               }}
               onUpdateResourceRequest={async (payload) => {
                 await mutateServerState(
                   "update_resource_request",
                   payload,
-                  `Booking updated to '${payload.nextStatus}' with physical condition log.`
+                  `Booking updated to '${payload.nextStatus}'.`
                 );
               }}
               onCreateBroadcast={async (payload) => {
                 await mutateServerState(
                   "create_dispatch_broadcast",
                   payload,
-                  `Live field need broadcast to ${payload.city} (${payload.radiusKm}km radius)!`
+                  `Field need posted in ${payload.city}!`
                 );
               }}
               onSubmitBid={async (payload) => {
                 await mutateServerState(
                   "submit_dispatch_bid",
                   payload,
-                  `Bid / Counter-Offer ($${payload.proposedRateUsd}/day) posted to broadcast!`
+                  `Offer ($${payload.proposedRateUsd}/day) sent!`
                 );
               }}
               onAcceptBid={async (payload) => {
                 await mutateServerState(
                   "accept_dispatch_bid",
                   payload,
-                  "Offer accepted! Dispatch locked & physical Handover PIN generated."
+                  "Offer accepted & Handover PIN generated!"
                 );
               }}
               onSwitchOrg={(orgId) => {
                 setActiveOrgId(orgId);
                 const orgObj = organisations.find((o) => o.id === orgId);
-                triggerToast(`Switched active newsroom to ${orgObj?.name}.`);
+                triggerToast(`Switched to ${orgObj?.name}.`);
               }}
             />
           )}
 
-          {/* 3. PEOPLE & EXPERTISE NETWORK */}
+          {/* 3. PEOPLE & EXPERTS */}
           {activeNav === "expertise" && (
-            <div className="space-y-5">
-              <div className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-800">
                 <div>
-                  <h2 className="text-sm font-bold text-white">
-                    Expertise Network & Transparent Specialist Matching
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Structured filtering by investigative skill, beat, language, and availability
+                  <h1 className="text-xl font-bold text-white">
+                    Specialist Journalists & Researchers
+                  </h1>
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    Discover verified data journalists, drone operators, media lawyers, and translators across partner newsrooms.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
                     <input
                       type="text"
                       value={skillFilter}
                       onChange={(e) => setSkillFilter(e.target.value)}
-                      placeholder="Filter by skill (e.g. Procurement, Drone, Law)..."
-                      className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 w-64"
+                      placeholder="Search skill or beat..."
+                      className="pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 w-60"
                     />
                   </div>
-                  {["All", "English", "Ndebele", "Shona", "Ndau"].map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguageFilter(lang)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer ${
-                        languageFilter === lang
-                          ? "bg-teal-500 text-slate-950 font-semibold"
-                          : "bg-slate-800 text-slate-300"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
+                  {["All", "English", "Ndebele", "Shona", "Ndau"].map(
+                    (lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => setLanguageFilter(lang)}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                          languageFilter === lang
+                            ? "bg-teal-500 text-slate-950"
+                            : "bg-slate-900 text-slate-300 border border-slate-800"
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {experts
                   .filter((exp) => {
                     const matchesLang =
@@ -721,71 +864,69 @@ export default function ConnectedNewsroomApp() {
                     return (
                       <div
                         key={exp.id}
-                        className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-4"
+                        className="p-5 rounded-2xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-5 shadow-sm"
                       >
-                        <div className="space-y-2.5">
+                        <div className="space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h3 className="text-sm font-bold text-white">
+                              <h3 className="text-base font-bold text-white">
                                 {exp.name}
                               </h3>
-                              <p className="text-xs text-teal-300 font-medium">
+                              <p className="text-xs text-teal-400 font-medium mt-0.5">
                                 {exp.role}
                               </p>
                             </div>
                             <span
-                              className={`text-[10px] px-2 py-0.5 rounded font-medium shrink-0 ${
+                              className={`text-xs px-2.5 py-0.5 rounded-full font-semibold shrink-0 ${
                                 exp.availability === "Available for Collab"
-                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                  : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "bg-amber-500/15 text-amber-300"
                               }`}
                             >
                               {exp.availability}
                             </span>
                           </div>
 
-                          <div className="text-xs text-slate-400">
-                            {org?.name} • 📍 {exp.city}
+                          <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                            {org?.name} ({exp.city})
                           </div>
 
                           <p className="text-xs text-slate-300 leading-relaxed">
                             {exp.bio}
                           </p>
 
-                          <div className="space-y-1.5 pt-1">
-                            <div className="text-[10px] font-semibold uppercase text-slate-400">
-                              Verified Specialist Skills
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {exp.skills.map((sk) => (
-                                <span
-                                  key={sk}
-                                  className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-sky-300 border border-slate-800"
-                                >
-                                  {sk}
-                                </span>
-                              ))}
-                            </div>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {exp.skills.map((sk) => (
+                              <span
+                                key={sk}
+                                className="text-xs px-2.5 py-1 rounded-lg bg-slate-900 text-sky-300 border border-slate-800"
+                              >
+                                {sk}
+                              </span>
+                            ))}
                           </div>
 
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                            <span>Languages: {exp.languages.join(", ")}</span>
-                            <span>{exp.completedCollabs} Network Collabs</span>
+                          <div className="text-xs text-slate-400 pt-1">
+                            Languages:{" "}
+                            <strong className="text-slate-200">
+                              {exp.languages.join(", ")}
+                            </strong>
                           </div>
                         </div>
 
                         <div className="pt-3 border-t border-slate-800">
                           {isCollaborating ? (
-                            <div className="w-full py-2 px-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5">
+                            <div className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              Active on Project Umzingwane
+                              Collaborating on Umzingwane Story
                             </div>
                           ) : (
                             <button
                               onClick={() => handleInviteExpert(exp)}
-                              className="w-full py-2 px-3 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs transition cursor-pointer"
+                              className="w-full py-2.5 px-4 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                             >
-                              Invite to Project Umzingwane →
+                              Invite to Investigation →
                             </button>
                           )}
                         </div>
@@ -796,7 +937,7 @@ export default function ConnectedNewsroomApp() {
             </div>
           )}
 
-          {/* 4. GITHUB-STYLE INVESTIGATION REPOSITORY, DRAG-AND-DROP KANBAN, DRAFT EDITOR & PR REVIEW GATE */}
+          {/* 4. INVESTIGATION WORKSPACE (3-Step Research → Kanban → Write & Publish) */}
           {activeNav === "investigations" && (
             <InvestigationWorkspaceView
               investigations={investigations}
@@ -809,7 +950,7 @@ export default function ConnectedNewsroomApp() {
               activeOrgId={activeOrgId}
               onSwitchOrg={(orgId) => {
                 setActiveOrgId(orgId);
-                triggerToast(`Switched active newsroom to ${orgId}.`);
+                triggerToast(`Switched to ${orgId}.`);
               }}
               onMoveTask={handleMoveKanbanTask}
               onSignOffTask={handleSignOffKanbanTask}
@@ -818,53 +959,41 @@ export default function ConnectedNewsroomApp() {
                 await mutateServerState(
                   "add_task_comment",
                   payload,
-                  "Verification note & Right-of-Reply status saved to SQLite."
+                  "Note saved."
                 );
               }}
               onSaveDraft={async (payload) => {
                 await mutateServerState(
                   "save_investigation_draft",
                   payload,
-                  "Story draft & inline citations saved to SQLite repository."
+                  "Story draft saved!"
                 );
               }}
               onToggleApproval={async (payload) => {
                 await mutateServerState(
                   "toggle_draft_approval",
                   payload,
-                  `Updated Pre-Publication Review Gate (${payload.role}).`
+                  `Updated sign-off for ${payload.role}.`
                 );
               }}
               onPublishToExchange={async (invId) => {
                 const ok = await mutateServerState(
                   "publish_draft_to_exchange",
                   { investigationId: invId },
-                  "Story Package merged & published to the News Exchange!"
+                  "Story published to the News Wire!"
                 );
                 if (ok) {
                   setActiveNav("news_exchange");
                 }
               }}
-              onOpenAICopilot={() => setActiveNav("ai_copilot")}
-            />
-          )}
-
-          {/* 5. AI NEWSROOM COPILOT (With Real File Upload & Citation Insertion) */}
-          {activeNav === "ai_copilot" && (
-            <AICopilotView
-              documents={documents}
-              organisations={organisations}
-              activeOrgId={activeOrgId}
               onDocumentIndexed={(newState, newDoc) => {
                 applyServerState(newState);
-                triggerToast(
-                  `Parsed & committed "${newDoc.title}" (${newDoc.passages.length} passages, SHA ${newDoc.commitHash}) to SQLite!`
-                );
+                triggerToast(`Added "${newDoc.title}" to investigation files!`);
               }}
               onLogAIQuery={(docTitle, mode, q) => {
                 mutateServerState("log_audit", {
                   category: "AI Query",
-                  actionText: `Executed dynamic passage query ("${q}...") on '${docTitle}' via ${mode}`,
+                  actionText: `Searched "${q}" in '${docTitle}'`,
                   resourceTarget: docTitle,
                 });
               }}
@@ -873,47 +1002,33 @@ export default function ConnectedNewsroomApp() {
                   "log_audit",
                   {
                     category: "Human Verification",
-                    actionText: `Journalist verified primary source Page ${pageNum} in '${docTitle}'`,
+                    actionText: `Verified Page ${pageNum} in '${docTitle}'`,
                     resourceTarget: docTitle,
                   },
-                  `Page ${pageNum} marked as Human-Verified in SQLite Audit Log.`
-                );
-              }}
-              onInsertCitationIntoDraft={async (citationTag) => {
-                const current = investigationDrafts.find(
-                  (d) => d.investigationId === "inv-umzingwane"
-                );
-                if (!current) return;
-                await mutateServerState(
-                  "save_investigation_draft",
-                  {
-                    investigationId: "inv-umzingwane",
-                    bodyMarkdown: `${current.bodyMarkdown.trim()}\n\n${citationTag}`,
-                  },
-                  `Inserted "${citationTag}" into Project Umzingwane Story Draft!`
+                  `Page ${pageNum} marked as verified.`
                 );
               }}
             />
           )}
 
-          {/* 6. NEWS EXCHANGE */}
+          {/* 5. NEWS WIRE & SYNDICATION EXCHANGE */}
           {activeNav === "news_exchange" && (
-            <div className="space-y-5">
-              <div className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
                 <div>
-                  <h2 className="text-sm font-bold text-white">
-                    News Exchange — Story Packages, Licensing & Syndication
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Share human-verified story packages across independent newsrooms while preserving originating ownership, embargoes, and attribution terms
+                  <h1 className="text-xl font-bold text-white">
+                    News Wire & Story Syndication
+                  </h1>
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    Discover and republish human-verified stories from partner newsrooms with clear attribution and licensing.
                   </p>
                 </div>
-                <span className="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  {stories.length} Verified Packages Available
+                <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                  {stories.length} Verified Story Packages
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {stories.map((story) => {
                   const originOrg = organisations.find(
                     (o) => o.id === story.originOrgId
@@ -928,91 +1043,132 @@ export default function ConnectedNewsroomApp() {
                   return (
                     <div
                       key={story.id}
-                      className="p-5 rounded-xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-4"
+                      className="p-6 rounded-2xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-5 shadow-sm"
                     >
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
                             {story.licenseType}
                           </span>
-                          <span className="text-[11px] text-emerald-300 flex items-center gap-1 font-medium">
-                            <FileCheck className="w-3.5 h-3.5" />
+                          <span className="text-xs text-emerald-300 flex items-center gap-1.5 font-semibold">
+                            <FileCheck className="w-4 h-4" />
                             {story.embargoLift}
                           </span>
                         </div>
 
                         <div>
-                          <h3 className="text-base font-bold text-white leading-snug">
+                          <h3 className="text-lg font-bold text-white leading-snug">
                             {story.title}
                           </h3>
-                          <p className="text-xs text-slate-300 mt-1">
+                          <p className="text-sm text-slate-300 mt-1.5 leading-relaxed">
                             {story.subtitle}
                           </p>
                         </div>
 
-                        <p className="text-xs text-slate-400 italic bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                        <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                           “{story.excerpt}”
                         </p>
 
-                        <div className="space-y-1.5">
-                          <div className="text-[11px] font-semibold text-slate-300">
-                            Included Media & Verification Package ({story.wordCount}{" "}
-                            words):
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {story.mediaIncluded.map((m) => (
-                              <span
-                                key={m}
-                                className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-sky-300 border border-slate-800"
-                              >
-                                ✓ {m}
-                              </span>
-                            ))}
-                          </div>
+                        <div className="flex flex-wrap gap-2">
+                          {story.mediaIncluded.map((m) => (
+                            <span
+                              key={m}
+                              className="text-xs px-2.5 py-1 rounded-lg bg-slate-900 text-sky-300 border border-slate-800"
+                            >
+                              ✓ {m}
+                            </span>
+                          ))}
                         </div>
 
-                        <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] space-y-1">
-                          <div className="text-slate-300">
-                            <strong>Originating Newsroom:</strong>{" "}
-                            {originOrg?.name}{" "}
+                        <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1.5">
+                          <div className="text-slate-200">
+                            <strong>Origin:</strong> {originOrg?.name}{" "}
                             {coOrgs.length > 0 &&
-                              `+ Co-Reported with ${coOrgs.join(", ")}`}
+                              `+ Co-reported with ${coOrgs.join(", ")}`}
                           </div>
                           <div className="text-teal-300">
-                            <strong>Mandatory Attribution:</strong>{" "}
+                            <strong>Credit Line:</strong>{" "}
                             {story.attributionRequirement}
                           </div>
                           <div className="text-emerald-300">
-                            <strong>Human Verification Sign-Off:</strong>{" "}
+                            <strong>Signed Off By:</strong>{" "}
                             {story.humanVerifiedBy}
                           </div>
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-400">
-                          Republished by{" "}
-                          <strong className="text-white">
-                            {story.republishCount}
-                          </strong>{" "}
-                          partner newsrooms
-                        </span>
+                      <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                        <button
+                          onClick={() => setReadingStory(story)}
+                          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                        >
+                          Read Full Story ({story.wordCount} words)
+                        </button>
 
                         <button
                           onClick={() => handleRequestSyndication(story)}
-                          className="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs transition cursor-pointer"
+                          className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                         >
-                          Request Syndication License for {activeOrg.shortName} →
+                          Republish in {activeOrg.shortName} (
+                          {story.republishCount}) →
                         </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Full Story Reader Modal */}
+              {readingStory && (
+                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-teal-500/50 bg-[#0f172a] p-6 flex flex-col justify-between gap-4 shadow-2xl">
+                    <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+                      <div>
+                        <span className="text-xs font-semibold text-teal-400">
+                          {readingStory.licenseType}
+                        </span>
+                        <h3 className="text-lg font-bold text-white mt-1">
+                          {readingStory.title}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setReadingStory(null)}
+                        className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                      >
+                        Close ✕
+                      </button>
+                    </div>
+
+                    <div className="overflow-y-auto space-y-4 pr-2 text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+                      <p className="font-semibold text-slate-100">
+                        {readingStory.subtitle}
+                      </p>
+                      <div>
+                        {readingStory.bodyMarkdown || readingStory.excerpt}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                      <span className="text-xs text-emerald-300">
+                        Verified by: {readingStory.humanVerifiedBy}
+                      </span>
+                      <button
+                        onClick={() => {
+                          handleRequestSyndication(readingStory);
+                          setReadingStory(null);
+                        }}
+                        className="px-5 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs cursor-pointer"
+                      >
+                        Republish with Attribution →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* 7. SECURITY ACLs & IMMUTABLE AUDIT LOG */}
+          {/* 6. PERMISSIONS & ACTIVITY LOG */}
           {activeNav === "security_audit" && (
             <SecurityAuditView
               auditLogs={auditLogs}

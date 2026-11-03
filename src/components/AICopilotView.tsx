@@ -13,29 +13,31 @@ import {
   Sparkles,
   BookOpen,
   Lock,
-  Cpu,
   CheckCircle2,
   AlertTriangle,
   Upload,
-  Eye,
   FileUp,
   Quote,
+  FileText,
 } from "lucide-react";
 
 interface AICopilotViewProps {
   documents: DocumentRecord[];
   organisations: Organisation[];
   activeOrgId: string;
-  onDocumentIndexed: (newState: Record<string, unknown>, doc: DocumentRecord) => void;
+  onDocumentIndexed: (
+    newState: Record<string, unknown>,
+    doc: DocumentRecord
+  ) => void;
   onLogAIQuery: (docTitle: string, mode: string, query: string) => void;
   onLogHumanVerification: (docTitle: string, pageNumber: number) => void;
   onInsertCitationIntoDraft?: (citationText: string) => void;
 }
 
 const PRESET_QUERIES = [
-  "What laboratory lithium and sulphate levels were recorded downstream of Tailings Dam #2?",
-  "When was the $1,420,000 emergency water chemical contract awarded and at what unit price markup?",
-  "What did ward councillors allege about manual night-time sluice valve discharges on 19 October?",
+  "What lithium and sulphate levels were measured downstream of Tailings Dam #2?",
+  "When was the $1,420,000 chemical contract awarded and at what price markup?",
+  "What did community members allege about night-time sluice valve discharges?",
 ];
 
 export default function AICopilotView({
@@ -49,9 +51,6 @@ export default function AICopilotView({
 }: AICopilotViewProps) {
   const [selectedDocId, setSelectedDocId] = useState<string>("doc-ema-audit");
   const [query, setQuery] = useState<string>(PRESET_QUERIES[0]);
-  const [inferencePreference, setInferencePreference] = useState<
-    "auto" | "local" | "cloud"
-  >("auto");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
@@ -70,20 +69,20 @@ export default function AICopilotView({
   const [aiResult, setAiResult] = useState<AIQueryResponse | null>({
     id: "ai-initial",
     query: PRESET_QUERIES[0],
-    modelUsed: "Connected Newsroom Dynamic Passage RAG (v2)",
+    modelUsed: "Connected Newsroom Grounded Research Assistant",
     inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
     answerSummary:
-      'Matched 1 passage(s) in "2026 Auditor-General & EMA Joint Inspection Report: Umzingwane Catchment" for your query ("What laboratory lithium and sulphate levels were recorded downstream of Tailings Dam #2?"). Documented on [Page 14 — Section 3.2 — Laboratory Effluent Analysis at Weir #3]: "Water samples collected on 14 August 2026 at 400 metres downstream of Tailings Dam #2 recorded dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L, exceeding the statutory Red-Class effluent threshold by 340%."',
+      'Official EMA laboratory tests on 14 August 2026 recorded dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L at 400 metres downstream of Tailings Dam #2—exceeding the statutory Red-Class effluent limit by 340% [Page 14]. Inspectors also documented a 12-metre tear in the HDPE liner on 02 September 2026 [Page 21].',
     evidenceFindings: [
-      "[Page 14 — Section 3.2 — Laboratory Effluent Analysis at Weir #3] Water samples collected on 14 August 2026 at 400 metres downstream of Tailings Dam #2 recorded dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L, exceeding the statutory Red-Class effluent threshold by 340%.",
+      "[Page 14 — Laboratory Effluent Analysis] Dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L, exceeding the statutory Red-Class effluent threshold by 340%.",
+      "[Page 21 — Geomembrane Liner Breach] 12-metre tear in the HDPE liner on Tailings Dam #2; Compliance Order #EMA-BYO-882 issued on 02 September 2026.",
     ],
     allegationsToVerify: [
-      "Zero unverified allegations in the matched passage set.",
+      "[Page 29 — Unverified Allegation] Three ward councillors alleged sluice valves were manually opened between 23:00 and 03:00 on 19 October 2026; automated flow-meter logs were missing.",
     ],
     humanVerificationChecklist: [
-      'Inspect source pages (p. 14) in "2026 Auditor-General & EMA Joint Inspection Report: Umzingwane Catchment".',
-      "Verify whether matched claims are Documented Evidence vs. Unverified Allegations.",
-      "Use the 'Insert Citation into Story Draft' button to cite verified pages accurately.",
+      "Inspect Page 14 and Page 21 in the original document viewer on the right.",
+      "Click 'Add Quote & Citation to Story' once verified.",
     ],
     citations: [
       {
@@ -124,7 +123,7 @@ export default function AICopilotView({
           documentId: docIdToUse,
           activeOrgId,
           customDocument: docObj,
-          preferredMode: inferencePreference,
+          preferredMode: "auto",
         }),
       });
 
@@ -204,48 +203,41 @@ export default function AICopilotView({
 
   return (
     <div className="space-y-5">
-      {/* Safeguard Top Banner */}
-      <div className="rounded-xl border border-teal-500/30 bg-teal-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      {/* Clean Header & Upload Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0f172a] border border-slate-800 rounded-2xl p-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-teal-500/15 text-teal-300 border border-teal-500/30">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-slate-100">
-                AI Newsroom Copilot — Real File Parsing, Passage Scoring & Entity Extraction
-              </h3>
-              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                Zero Auto-Publish Safeguard
-              </span>
-            </div>
-            <p className="text-xs text-slate-300">
-              Upload `.pdf`, `.txt`, `.csv`, or `.md` files to extract numbered passages, classify{" "}
-              <span className="text-emerald-300 font-medium">Documented Evidence</span> vs.{" "}
-              <span className="text-amber-300 font-medium">Unverified Allegations</span>, and insert page citations directly into your story draft.
+            <h2 className="text-base font-bold text-white">
+              AI Document Research & Source Verification
+            </h2>
+            <p className="text-xs text-slate-400">
+              Select a source document below, ask a question, and inspect exact page quotes before citing in your story.
             </p>
           </div>
         </div>
 
         <button
           onClick={() => setShowUploadModal(!showUploadModal)}
-          className="px-3.5 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow"
+          className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
         >
-          <Upload className="w-3.5 h-3.5" />
-          Upload & Parse Evidence File (.PDF / .TXT / .CSV)
+          <Upload className="w-4 h-4" />
+          Upload Source Document (.PDF / .TXT)
         </button>
       </div>
 
-      {/* Real Multipart File Upload & Parser Modal */}
+      {/* Upload Modal */}
       {showUploadModal && (
         <form
           onSubmit={handleUploadSubmit}
-          className="p-4 rounded-xl border border-teal-500/40 bg-slate-900/95 space-y-3"
+          className="p-5 rounded-2xl border border-teal-500/40 bg-slate-900/95 space-y-4 shadow-xl"
         >
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
-              <FileUp className="w-4 h-4" />
-              Commit & Parse New Primary Document into SQLite Evidence Repo
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <FileUp className="w-4 h-4 text-teal-400" />
+              Add Primary Source Document to Investigation
             </h4>
             <button
               type="button"
@@ -256,10 +248,10 @@ export default function AICopilotView({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1">
-                Select File from Disk (.pdf, .txt, .md, .csv)
+              <label className="block text-slate-300 font-medium mb-1">
+                Choose File (.pdf, .txt, .csv, .md)
               </label>
               <input
                 type="file"
@@ -271,26 +263,26 @@ export default function AICopilotView({
                     setUploadTitle(f.name.replace(/\.[^/.]+$/, ""));
                   }
                 }}
-                className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-500 file:text-slate-950"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500 file:text-slate-950"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">
+              <label className="block text-slate-300 font-medium mb-1">
                 Document Title
               </label>
               <input
                 type="text"
                 value={uploadTitle}
                 onChange={(e) => setUploadTitle(e.target.value)}
-                placeholder="e.g., ZINWA Borehole Heavy Metal Test Certificate #408"
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"
+                placeholder="e.g., ZINWA Water Lab Certificate #408"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">
-                AI Model Processing Consent Policy
+              <label className="block text-slate-300 font-medium mb-1">
+                Privacy & AI Processing Mode
               </label>
               <select
                 value={uploadConsent}
@@ -301,28 +293,28 @@ export default function AICopilotView({
                       | "Local Inference Only (Confidential)"
                   )
                 }
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
               >
                 <option value="Local Inference Only (Confidential)">
-                  Local Inference Only (Ollama Air-Gapped — Sensitive Leak)
+                  Private / Confidential (Local Model Only)
                 </option>
                 <option value="Approved for Cloud & Local AI">
-                  Approved Public Report (Server-Side Gemini API Allowed)
+                  Public Report (Cloud & Local AI Allowed)
                 </option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">
-              Or Paste / Supplement Raw Document Text (Split by paragraph into numbered pages/passages)
+            <label className="block text-xs text-slate-300 font-medium mb-1">
+              Or Paste Document Text directly
             </label>
             <textarea
               rows={3}
               value={uploadExcerpt}
               onChange={(e) => setUploadExcerpt(e.target.value)}
-              placeholder="Paste multi-paragraph report text, lab findings, or interview transcript here (separate paragraphs with a blank line to index multiple passages)..."
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100"
+              placeholder="Paste paragraphs from a report or interview transcript..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-100"
             />
           </div>
 
@@ -330,18 +322,16 @@ export default function AICopilotView({
             <button
               type="submit"
               disabled={uploading}
-              className="px-4 py-2 rounded-lg bg-teal-500 text-slate-950 font-bold text-xs cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs cursor-pointer"
             >
-              {uploading
-                ? "Parsing & Extracting Entities..."
-                : "Parse File, Extract Entities & Commit to Repo"}
+              {uploading ? "Indexing Document..." : "Upload & Index Document"}
             </button>
           </div>
         </form>
       )}
 
-      {/* Document Selection Cards (Showing Commit Hash & Multi-Org ACLs) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Clean Document Selector Pills */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         {documents.map((doc) => {
           const isAllowed = doc.allowedOrgIds.includes(activeOrgId);
           const isSelected = doc.id === selectedDocId;
@@ -364,246 +354,181 @@ export default function AICopilotView({
                   runResearchQuery(doc.id, defaultQ);
                 }
               }}
-              className={`text-left p-3.5 rounded-xl border transition flex flex-col justify-between gap-2 cursor-pointer ${
+              className={`text-left p-4 rounded-2xl border transition flex flex-col justify-between gap-3 cursor-pointer ${
                 isSelected
-                  ? "bg-[#15223b] border-teal-500/60 shadow-lg"
+                  ? "bg-[#15223b] border-teal-500 shadow-lg"
                   : "bg-[#0f172a] border-slate-800 hover:border-slate-700"
               }`}
             >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    {doc.commitHash ? `SHA ${doc.commitHash}` : doc.documentType} •{" "}
-                    {doc.passages.length} passages
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-teal-400 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    {doc.documentType}
                   </span>
                   {isAllowed ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Authorised
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-semibold">
+                      Shared
                     </span>
                   ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Restricted ACL
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 font-semibold flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Private to {ownerOrg?.shortName}
                     </span>
                   )}
                 </div>
-                <h4 className="text-xs font-semibold text-slate-100 leading-snug">
+                <h4 className="text-sm font-bold text-white leading-snug">
                   {doc.title}
                 </h4>
               </div>
 
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                <span>Custodian: {ownerOrg?.shortName}</span>
-                <span className="text-teal-300 flex items-center gap-1">
-                  <Cpu className="w-3 h-3" />
-                  {doc.aiConsentStatus.includes("Local")
-                    ? "Local Ollama Only"
-                    : "Gemini / Local"}
-                </span>
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span>Source: {ownerOrg?.shortName}</span>
+                <span>{doc.pageCount} pages</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* 403 Multi-Organisation Permission Block Banner */}
+      {/* 403 Permission Block Banner */}
       {errorBanner && (
-        <div className="p-4 rounded-xl border border-rose-500/50 bg-rose-950/30 flex items-start gap-3">
+        <div className="p-4 rounded-2xl border border-rose-500/50 bg-rose-950/30 flex items-start gap-3">
           <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-rose-200 uppercase tracking-wider">
-              Multi-Organisation Access Control Enforced (HTTP 403)
+            <h4 className="text-sm font-bold text-rose-200">
+              Restricted Document — Access Blocked
             </h4>
             <p className="text-xs text-rose-300">{errorBanner}</p>
           </div>
         </div>
       )}
 
-      {/* Main Split View: Left = Dynamic Passage Search & Synthesis | Right = Primary Source Reader + Citation Insertion */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Main Split Workspace: Left = Question & Grounded Answer | Right = Original Document Passages */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left 7 Columns */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-teal-400" />
-                Query Indexed Evidence Passages
-              </span>
+          <div className="p-5 rounded-2xl border border-slate-800 bg-[#0f172a] space-y-3.5">
+            <label className="block text-sm font-bold text-white">
+              Ask a question about “{selectedDoc.title}”
+            </label>
 
-              <div className="flex items-center gap-1.5 text-[11px]">
-                <span className="text-slate-400">Gateway Mode:</span>
-                {(["auto", "local", "cloud"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setInferencePreference(m)}
-                    className={`px-2 py-0.5 rounded capitalize cursor-pointer ${
-                      inferencePreference === m
-                        ? "bg-teal-500 text-slate-950 font-semibold"
-                        : "bg-slate-800 text-slate-300"
-                    }`}
-                  >
-                    {m === "auto"
-                      ? "Policy Auto"
-                      : m === "local"
-                      ? "Local Ollama"
-                      : "Gemini API"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask about specific figures, dates, entities, or allegations..."
-                className="flex-1 px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-teal-400"
+                placeholder="Ask about specific dates, lab numbers, contracts, or people..."
+                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-100 focus:outline-none focus:border-teal-400"
               />
               <button
                 onClick={() => runResearchQuery()}
                 disabled={loading}
-                className="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 shrink-0 cursor-pointer shadow"
               >
-                <Search className="w-3.5 h-3.5" />
-                {loading ? "Scoring..." : "Search Passages"}
+                <Search className="w-4 h-4" />
+                {loading ? "Searching..." : "Ask Copilot"}
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {PRESET_QUERIES.map((pq, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setQuery(pq);
-                    const targetDoc =
-                      idx === 1 ? "doc-procurement-ledger" : "doc-ema-audit";
-                    setSelectedDocId(targetDoc);
-                    runResearchQuery(targetDoc, pq);
-                  }}
-                  className="text-left text-[11px] px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition cursor-pointer"
-                >
-                  “{pq.slice(0, 65)}…”
-                </button>
-              ))}
+            {/* Suggested Questions */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-xs text-slate-400">
+                Try a suggested question:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_QUERIES.map((pq, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setQuery(pq);
+                      const targetDoc =
+                        idx === 1 ? "doc-procurement-ledger" : "doc-ema-audit";
+                      setSelectedDocId(targetDoc);
+                      runResearchQuery(targetDoc, pq);
+                    }}
+                    className="text-left text-xs px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-300 border border-slate-800 transition cursor-pointer"
+                  >
+                    “{pq}”
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {aiResult && hasAccessToSelected && (
-            <div className="p-4 rounded-xl border border-slate-800 bg-[#111a2e] space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
-                <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-teal-400 block">
-                    Dynamic Grounded Synthesis
-                  </span>
-                  <h4 className="text-xs font-semibold text-slate-100 mt-0.5">
-                    Query: “{aiResult.query}”
-                  </h4>
-                </div>
-                <span className="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-900 text-sky-300 border border-slate-700">
+            <div className="p-5 rounded-2xl border border-slate-800 bg-[#111a2e] space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-teal-400" />
+                  Source-Grounded Answer
+                </h4>
+                <span className="text-xs text-slate-400">
                   {aiResult.inferenceMode}
                 </span>
               </div>
 
-              <p className="text-xs text-slate-200 leading-relaxed bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/90">
+              <p className="text-sm text-slate-100 leading-relaxed bg-slate-950/70 p-4 rounded-xl border border-slate-800">
                 {aiResult.answerSummary}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-950/15 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+              {/* Evidence vs Allegations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/15 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
                     <CheckCircle2 className="w-4 h-4" />
-                    Documented Primary Evidence
+                    Documented Evidence
                   </div>
-                  <ul className="space-y-2 text-[11px] text-slate-200">
+                  <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
                     {aiResult.evidenceFindings.map((ef, i) => (
-                      <li key={i} className="leading-snug">
-                        • {ef}
-                      </li>
+                      <li key={i}>• {ef}</li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-950/15 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/15 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
                     <AlertTriangle className="w-4 h-4" />
-                    Allegations & Flags Requiring Verification
+                    Unverified Allegations (Needs Corroboration)
                   </div>
-                  <ul className="space-y-2 text-[11px] text-slate-200">
+                  <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
                     {aiResult.allegationsToVerify.map((al, i) => (
-                      <li key={i} className="leading-snug">
-                        • {al}
-                      </li>
+                      <li key={i}>• {al}</li>
                     ))}
                   </ul>
-                </div>
-              </div>
-
-              {/* Extracted Entities Bar */}
-              <div className="pt-2 border-t border-slate-800/80">
-                <div className="text-[11px] font-semibold text-slate-400 mb-2">
-                  Extracted Entities & Dates in “{selectedDoc.title}”
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedDoc.extractedEntities.organisations.map((org) => (
-                    <span
-                      key={org}
-                      className="text-[10px] px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30"
-                    >
-                      Org: {org}
-                    </span>
-                  ))}
-                  {selectedDoc.extractedEntities.people.map((person) => (
-                    <span
-                      key={person}
-                      className="text-[10px] px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30"
-                    >
-                      Person: {person}
-                    </span>
-                  ))}
-                  {selectedDoc.extractedEntities.keyDates.map((dt) => (
-                    <span
-                      key={dt}
-                      className="text-[10px] px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30"
-                    >
-                      Date: {dt}
-                    </span>
-                  ))}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Right 5 Columns: Side-by-Side Primary Source Reader + 1-Click Citation Insertion */}
-        <div className="lg:col-span-5 flex flex-col rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        {/* Right 5 Columns: Original Source Pages */}
+        <div className="lg:col-span-5 flex flex-col rounded-2xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
               <BookOpen className="w-4 h-4 text-teal-400" />
               <div>
-                <h4 className="text-xs font-semibold text-slate-100">
-                  Primary Source Inspector & Citation Linker
+                <h4 className="text-sm font-bold text-white">
+                  Original Document Passages
                 </h4>
-                <p className="text-[11px] text-slate-400">
-                  Verify passages & insert citations directly into Story Draft
+                <p className="text-xs text-slate-400">
+                  Verify exact wording & add citation to your story draft
                 </p>
               </div>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-              {selectedDoc.passages.length} Passages
-            </span>
           </div>
 
           {!hasAccessToSelected ? (
-            <div className="p-8 text-center space-y-2 my-auto">
+            <div className="p-10 text-center space-y-2 my-auto">
               <Lock className="w-8 h-8 text-rose-400 mx-auto" />
-              <div className="text-sm font-semibold text-slate-200">
-                Source Material Locked by Organisation ACL
+              <div className="text-sm font-bold text-slate-200">
+                Document Locked
               </div>
               <p className="text-xs text-slate-400">
-                Your current organisation ({activeOrgId}) is not on the access list for this confidential document.
+                Your active newsroom does not have permission to read this file.
               </p>
             </div>
           ) : (
-            <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+            <div className="p-4 space-y-3.5 flex-1 overflow-y-auto">
               {selectedDoc.passages.map((pas) => {
                 const isHighlighted = highlightedPage === pas.pageNumber;
                 const verifyKey = `${selectedDoc.id}-${pas.pageNumber}`;
@@ -613,30 +538,28 @@ export default function AICopilotView({
                   <div
                     key={pas.id}
                     onClick={() => setHighlightedPage(pas.pageNumber)}
-                    className={`p-3.5 rounded-lg border transition cursor-pointer ${
+                    className={`p-4 rounded-xl border transition cursor-pointer space-y-3 ${
                       isHighlighted
                         ? "border-teal-400 bg-teal-950/20 shadow-md"
                         : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-xs font-mono font-bold text-teal-300">
-                        PAGE {pas.pageNumber} • {pas.sectionTitle}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-teal-300">
+                        Page {pas.pageNumber} • {pas.sectionTitle}
                       </span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${
                           pas.classification === "Documented Evidence"
-                            ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                            : pas.classification === "Unverified Allegation"
-                            ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                            : "bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-amber-500/15 text-amber-300"
                         }`}
                       >
                         {pas.classification}
                       </span>
                     </div>
 
-                    <blockquote className="text-xs text-slate-200 italic border-l-2 border-teal-500/60 pl-3 py-1 my-2 bg-slate-950/50 rounded-r">
+                    <blockquote className="text-xs text-slate-100 leading-relaxed border-l-2 border-teal-500 pl-3 py-1 bg-slate-950/50 rounded-r">
                       “{pas.quote}”
                     </blockquote>
 
@@ -646,19 +569,18 @@ export default function AICopilotView({
                           onClick={(e) => {
                             e.stopPropagation();
                             onInsertCitationIntoDraft(
-                              `[Citation: ${selectedDoc.title}, p. ${pas.pageNumber}]`
+                              `${pas.quote} [Citation: ${selectedDoc.title}, p. ${pas.pageNumber}]`
                             );
                           }}
-                          className="px-2 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-[10px] font-medium flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
                         >
-                          <Quote className="w-3 h-3" />
-                          Insert Citation into Story Draft
+                          <Quote className="w-3.5 h-3.5" />+ Add Quote & Cite in Story
                         </button>
                       )}
 
                       {isVerified ? (
-                        <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Verified by Journalist
+                        <span className="text-xs text-emerald-300 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-4 h-4" /> Verified by Journalist
                         </span>
                       ) : (
                         <button
@@ -673,9 +595,9 @@ export default function AICopilotView({
                               pas.pageNumber
                             );
                           }}
-                          className="px-2.5 py-1 rounded bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 text-[10px] font-medium cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
                         >
-                          Mark Passage Human-Verified ✓
+                          Mark Verified ✓
                         </button>
                       )}
                     </div>
