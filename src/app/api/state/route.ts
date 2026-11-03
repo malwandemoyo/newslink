@@ -12,6 +12,7 @@ import {
   INITIAL_DISPATCH_BROADCASTS,
   INITIAL_COLLABORATIONS,
   INITIAL_KANBAN_TASKS,
+  INITIAL_INVESTIGATION_DRAFTS,
   INITIAL_DOCUMENTS,
   INITIAL_STORIES,
   INITIAL_SYNDICATION_REQUESTS,
@@ -23,6 +24,7 @@ import {
   DispatchBid,
   CollaborationRequest,
   KanbanTask,
+  InvestigationDraft,
   DocumentRecord,
   StoryPackage,
   SyndicationRequest,
@@ -150,7 +152,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 3. Approve / Check Out (with PIN & Serial Verification) / Return Equipment
+    // 3. Approve / Check Out / Return Equipment
     if (action === "update_resource_request") {
       const resources = getCollection<Resource[]>("resources", INITIAL_RESOURCES);
       const requests = getCollection<ResourceRequest[]>(
@@ -211,7 +213,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 4. Create inDrive-Style Field Dispatch Broadcast ("Post a Need")
+    // 4. Create inDrive-Style Field Dispatch Broadcast
     if (action === "create_dispatch_broadcast") {
       const broadcasts = getCollection<DispatchBroadcast[]>(
         "dispatch_broadcasts",
@@ -296,7 +298,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 6. Accept Bid on Field Dispatch Broadcast (Locks Match & Generates Handover PIN)
+    // 6. Accept Bid on Field Dispatch Broadcast
     if (action === "accept_dispatch_bid") {
       const broadcasts = getCollection<DispatchBroadcast[]>(
         "dispatch_broadcasts",
@@ -359,7 +361,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 8. Kanban Task Mutations
+    // 8. Kanban Task Mutations (Drag-and-drop move, signoff, comments, right-of-reply)
     if (action === "move_kanban_task") {
       const tasks = getCollection<KanbanTask[]>(
         "kanban_tasks",
@@ -405,6 +407,7 @@ export async function POST(req: NextRequest) {
       const created: KanbanTask = {
         ...payload.task,
         id: `task-${Date.now()}`,
+        comments: [],
       };
       setCollection("kanban_tasks", [created, ...tasks]);
       recordAudit(
@@ -416,7 +419,161 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 9. Document Upload & Audit Logging
+    if (action === "add_task_comment") {
+      const tasks = getCollection<KanbanTask[]>(
+        "kanban_tasks",
+        INITIAL_KANBAN_TASKS
+      );
+      const newComment = {
+        id: `cmt-${Date.now()}`,
+        authorName: ACTOR_BY_ORG[activeOrgId] || "Journalist",
+        authorOrgId: activeOrgId,
+        text: payload.text,
+        createdAt: nowStamp(),
+      };
+      const updated = tasks.map((t) =>
+        t.id === payload.taskId
+          ? {
+              ...t,
+              rightOfReplyStatus:
+                payload.rightOfReplyStatus ?? t.rightOfReplyStatus,
+              evidenceRef: payload.evidenceRef ?? t.evidenceRef,
+              comments: [...(t.comments || []), newComment],
+            }
+          : t
+      );
+      setCollection("kanban_tasks", updated);
+      recordAudit(
+        activeOrgId,
+        "Human Verification",
+        `Logged verification note on task ${payload.taskId}: "${payload.text.slice(0, 45)}..."`,
+        payload.taskId
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    // 9. Collaborative Story Draft & Pre-Publication Review Gate (GitHub PR Model)
+    if (action === "save_investigation_draft") {
+      const drafts = getCollection<InvestigationDraft[]>(
+        "investigation_drafts",
+        INITIAL_INVESTIGATION_DRAFTS
+      );
+      const updated = drafts.map((d) =>
+        d.investigationId === payload.investigationId
+          ? {
+              ...d,
+              headline: payload.headline ?? d.headline,
+              subheadline: payload.subheadline ?? d.subheadline,
+              bodyMarkdown: payload.bodyMarkdown ?? d.bodyMarkdown,
+              attributionText: payload.attributionText ?? d.attributionText,
+              licenseType: payload.licenseType ?? d.licenseType,
+              lastUpdatedAt: nowStamp(),
+            }
+          : d
+      );
+      setCollection("investigation_drafts", updated);
+      recordAudit(
+        activeOrgId,
+        "Evidence Commit",
+        `Saved collaborative story draft changes in '${payload.investigationId}'`,
+        payload.investigationId
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    if (action === "toggle_draft_approval") {
+      const drafts = getCollection<InvestigationDraft[]>(
+        "investigation_drafts",
+        INITIAL_INVESTIGATION_DRAFTS
+      );
+      const updated = drafts.map((d) => {
+        if (d.investigationId !== payload.investigationId) return d;
+        return {
+          ...d,
+          lastUpdatedAt: nowStamp(),
+          approvals: d.approvals.map((app) =>
+            app.role === payload.role
+              ? {
+                  ...app,
+                  approved: !app.approved,
+                  approvedAt: !app.approved ? nowStamp() : undefined,
+                  note: payload.note || app.note,
+                }
+              : app
+          ),
+        };
+      });
+      setCollection("investigation_drafts", updated);
+      recordAudit(
+        activeOrgId,
+        "Human Verification",
+        `Updated Pre-Publication Review Gate '${payload.role}' on ${payload.investigationId}`,
+        payload.investigationId
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    if (action === "publish_draft_to_exchange") {
+      const drafts = getCollection<InvestigationDraft[]>(
+        "investigation_drafts",
+        INITIAL_INVESTIGATION_DRAFTS
+      );
+      const stories = getCollection<StoryPackage[]>("stories", INITIAL_STORIES);
+      const draft = drafts.find(
+        (d) => d.investigationId === payload.investigationId
+      );
+      if (!draft) {
+        return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+      }
+
+      const allApproved = draft.approvals.every((a) => a.approved);
+      if (!allApproved) {
+        return NextResponse.json(
+          {
+            error:
+              "PUBLICATION BLOCKED: All 3 Pre-Publication Review Gates (Lead Editor, Partner Data Desk, Pre-Publication Legal) must be signed off before publishing to the News Exchange.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const words = draft.bodyMarkdown.trim().split(/\s+/).length;
+      const newStory: StoryPackage = {
+        id: `story-${Date.now()}`,
+        title: draft.headline,
+        subtitle: draft.subheadline,
+        originOrgId: activeOrgId,
+        coAuthorOrgIds: ["org-hre", "org-cite"].filter(
+          (id) => id !== activeOrgId
+        ),
+        investigationId: draft.investigationId,
+        publishedAt: nowStamp(),
+        embargoLift: "Immediate Release (3/3 Review Gates Signed Off)",
+        licenseType: draft.licenseType,
+        attributionRequirement: draft.attributionText,
+        mediaIncluded: draft.mediaAssets,
+        wordCount: words,
+        humanVerifiedBy: draft.approvals
+          .map((a) => `${a.reviewerName} (${a.role})`)
+          .join(", "),
+        excerpt:
+          draft.bodyMarkdown.replace(/#+/g, "").slice(0, 320).trim() + "...",
+        bodyMarkdown: draft.bodyMarkdown,
+        republishCount: 1,
+      };
+
+      setCollection("stories", [newStory, ...stories]);
+      recordAudit(
+        activeOrgId,
+        "Story Syndication",
+        `Merged & published verified investigation '${newStory.title}' to News Exchange`,
+        newStory.id
+      );
+
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    // 10. Document Upload & Audit Logging
     if (action === "upload_document") {
       const docs = getCollection<DocumentRecord[]>(
         "documents",
@@ -425,14 +582,14 @@ export async function POST(req: NextRequest) {
       setCollection("documents", [payload.document, ...docs]);
       recordAudit(
         activeOrgId,
-        "Investigation ACL",
-        `Indexed document '${payload.document.title}' into SQLite/Qdrant repository`,
+        "Evidence Commit",
+        `Indexed document '${payload.document.title}' into SQLite repository`,
         payload.document.id
       );
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 10. Request Story Syndication
+    // 11. Request Story Syndication
     if (action === "request_syndication") {
       const stories = getCollection<StoryPackage[]>("stories", INITIAL_STORIES);
       const syndications = getCollection<SyndicationRequest[]>(
@@ -466,7 +623,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(getFullWorkspaceState());
     }
 
-    // 11. Generic Audit Log Entry
+    // 12. Generic Audit Log Entry
     if (action === "log_audit") {
       recordAudit(
         activeOrgId,

@@ -36,7 +36,7 @@ export interface Resource {
   condition: "Excellent" | "Good" | "Field-Tested";
   specs: string[];
   dailyTerms: string;
-  suggestedRateUsd: number; // 0 for reciprocal network loan, or daily pool contribution
+  suggestedRateUsd: number;
   collateralRequirement: string;
   availableWindow: string;
 }
@@ -140,6 +140,14 @@ export type KanbanColumnId =
   | "editorial_review"
   | "syndication_ready";
 
+export interface TaskComment {
+  id: string;
+  authorName: string;
+  authorOrgId: OrgId;
+  text: string;
+  createdAt: string;
+}
+
 export interface KanbanTask {
   id: string;
   investigationId: string;
@@ -150,13 +158,37 @@ export interface KanbanTask {
   assigneeOrgId: OrgId;
   priority: "High" | "Medium" | "Standard";
   evidenceRef?: string;
+  rightOfReplyStatus?: "Not Required" | "Dispatched (72h Window)" | "Response Logged";
   requiresHumanSignoff: boolean;
   signedOffBy?: string;
+  comments?: TaskComment[];
+}
+
+export interface ReviewApproval {
+  role: "Lead Editor" | "Partner Data Desk" | "Pre-Publication Legal";
+  orgId: OrgId;
+  reviewerName: string;
+  approved: boolean;
+  approvedAt?: string;
+  note: string;
+}
+
+export interface InvestigationDraft {
+  investigationId: string;
+  headline: string;
+  subheadline: string;
+  bodyMarkdown: string;
+  licenseType: StoryPackage["licenseType"];
+  attributionText: string;
+  mediaAssets: string[];
+  approvals: ReviewApproval[];
+  lastUpdatedAt: string;
 }
 
 export interface Investigation {
   id: string;
   codeName: string;
+  repoSlug: string;
   title: string;
   summary: string;
   leadOrgId: OrgId;
@@ -187,6 +219,8 @@ export interface DocumentRecord {
   id: string;
   investigationId: string;
   title: string;
+  fileName?: string;
+  commitHash?: string;
   sourceOrgId: OrgId;
   allowedOrgIds: OrgId[];
   documentType: "Public Audit Report" | "Procurement Ledger" | "Lab Water Sample" | "Interview Transcript";
@@ -240,6 +274,7 @@ export interface StoryPackage {
   wordCount: number;
   humanVerifiedBy: string;
   excerpt: string;
+  bodyMarkdown?: string;
   republishCount: number;
 }
 
@@ -262,6 +297,7 @@ export interface AuditLogEntry {
     | "Resource Booking"
     | "inDrive Dispatch"
     | "Investigation ACL"
+    | "Evidence Commit"
     | "AI Query"
     | "Human Verification"
     | "Story Syndication";

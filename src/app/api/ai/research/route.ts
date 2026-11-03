@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCollection } from "@/lib/db";
 import { INITIAL_DOCUMENTS } from "@/data/seed";
 import { AICitation, AIQueryResponse, DocumentRecord } from "@/types/newsroom";
+
+const STOP_WORDS = new Set([
+  "what",
+  "when",
+  "where",
+  "which",
+  "who",
+  "whom",
+  "whose",
+  "why",
+  "how",
+  "were",
+  "was",
+  "are",
+  "is",
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "into",
+  "about",
+  "does",
+  "did",
+  "show",
+  "tell",
+  "report",
+  "document",
+]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,13 +58,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Locate target document from seed or custom uploaded doc
+    const dbDocs = getCollection<DocumentRecord[]>(
+      "documents",
+      INITIAL_DOCUMENTS
+    );
     const doc: DocumentRecord | undefined =
-      customDocument || INITIAL_DOCUMENTS.find((d) => d.id === documentId);
+      dbDocs.find((d) => d.id === documentId) || customDocument;
 
     if (!doc) {
       return NextResponse.json(
-        { error: "Document not found in repository." },
+        { error: "Document not found in SQLite repository." },
         { status: 404 }
       );
     }
@@ -52,21 +87,33 @@ export async function POST(req: NextRequest) {
       doc.aiConsentStatus === "Local Inference Only (Confidential)" ||
       preferredMode === "local";
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    const lowerQ = query.toLowerCase();
+    const queryTokens = query
+      .toLowerCase()
+      .replace(/[^a-z0-9$%\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
 
-    // Score passages against the journalist's query
-    const matchedPassages = doc.passages.filter((p) => {
-      const text = `${p.sectionTitle} ${p.quote} ${p.entities.join(" ")} ${p.dates.join(" ")}`.toLowerCase();
-      const keywords = lowerQ
-        .replace(/[^a-z0-9\s]/g, "")
-        .split(/\s+/)
-        .filter((w) => w.length > 3);
-      return keywords.some((kw) => text.includes(kw));
-    });
+    // Score each passage by token overlap + entity match
+    const scoredPassages = doc.passages
+      .map((p) => {
+        const hay =
+          `${p.sectionTitle} ${p.quote} ${p.classification} ${p.entities.join(" ")} ${p.dates.join(" ")}`.toLowerCase();
+        let score = 0;
+        for (const tok of queryTokens) {
+          if (hay.includes(tok)) {
+            score += tok.length > 5 ? 3 : 2;
+          }
+        }
+        return { passage: p, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const topMatched = scoredPassages
+      .filter((sp) => sp.score > 0)
+      .map((sp) => sp.passage);
 
     const selectedPassages =
-      matchedPassages.length > 0 ? matchedPassages : doc.passages;
+      topMatched.length > 0 ? topMatched : doc.passages;
 
     const citations: AICitation[] = selectedPassages.map((p) => ({
       documentId: doc.id,
@@ -78,6 +125,7 @@ export async function POST(req: NextRequest) {
     }));
 
     // Optional live Gemini call if GEMINI_API_KEY is configured and allowed by document consent
+    const geminiApiKey = process.env.GEMINI_API_KEY;
     if (geminiApiKey && !mustUseLocal) {
       try {
         const contextBlock = selectedPassages
@@ -97,14 +145,11 @@ export async function POST(req: NextRequest) {
                 {
                   parts: [
                     {
-                      text: `You are the Connected Newsroom Research Copilot. You assist human journalists by answering questions strictly from the provided source passages.
-Never invent facts. Distinguish clearly between Documented Evidence and Unverified Allegations.
+                      text: `You are the Connected Newsroom Research Copilot. Answer the journalist's question strictly using the provided passages. Cite exact page numbers in brackets like [Page X] and explicitly separate Documented Evidence from Unverified Allegations.
 Question: ${query}
 
-Source Passages from "${doc.title}":
-${contextBlock}
-
-Respond with a concise 2-3 sentence grounded synthesis citing exact page numbers.`,
+Passages from "${doc.title}":
+${contextBlock}`,
                     },
                   ],
                 },
@@ -117,9 +162,8 @@ Respond with a concise 2-3 sentence grounded synthesis citing exact page numbers
           const geminiData = await geminiRes.json();
           const generatedText =
             geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-
           if (generatedText) {
-            const responsePayload: AIQueryResponse = {
+            return NextResponse.json({
               id: `ai-${Date.now()}`,
               query,
               modelUsed: "gemini-2.5-flash (Grounded RAG)",
@@ -127,30 +171,28 @@ Respond with a concise 2-3 sentence grounded synthesis citing exact page numbers
               answerSummary: generatedText,
               evidenceFindings: selectedPassages
                 .filter((p) => p.classification === "Documented Evidence")
-                .map((p) => `[p. ${p.pageNumber}] ${p.quote}`),
+                .map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`),
               allegationsToVerify: selectedPassages
                 .filter((p) => p.classification !== "Documented Evidence")
                 .map(
                   (p) =>
-                    `[p. ${p.pageNumber} — ${p.classification}] ${p.quote}`
+                    `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
                 ),
               humanVerificationChecklist: [
-                "Inspect original PDF page citations before quoting in draft.",
-                "Cross-check laboratory/procurement figures against physical waybills or lab sheets.",
-                "Ensure formal Right-of-Reply is sent to named entities prior to publication.",
+                `Inspect original source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
+                "Cross-check figures against physical certificates before inserting citation into story draft.",
               ],
               citations,
               timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
-            };
-            return NextResponse.json(responsePayload);
+            } satisfies AIQueryResponse);
           }
         }
       } catch {
-        // Fall through smoothly to deterministic grounded RAG engine
+        // Fall through to dynamic grounded synthesis
       }
     }
 
-    // Grounded Deterministic RAG Synthesis (Works 100% offline or for Local Inference Only docs)
+    // Dynamic Query-Specific Grounded Synthesis
     const evidencePassages = selectedPassages.filter(
       (p) => p.classification === "Documented Evidence"
     );
@@ -158,39 +200,49 @@ Respond with a concise 2-3 sentence grounded synthesis citing exact page numbers
       (p) => p.classification !== "Documented Evidence"
     );
 
+    const dynamicSentences = selectedPassages.map((p) => {
+      const prefix =
+        p.classification === "Documented Evidence"
+          ? `Documented on [Page ${p.pageNumber} — ${p.sectionTitle}]`
+          : `Flagged as ${p.classification} on [Page ${p.pageNumber} — ${p.sectionTitle}]`;
+      return `${prefix}: "${p.quote}"`;
+    });
+
     const answerSummary =
-      doc.id === "doc-ema-audit"
-        ? `Based on retrieved passages in "${doc.title}", official EMA laboratory tests on 14 August 2026 recorded dissolved lithium (4.8 mg/L) and sulphate (1,120 mg/L) at 340% above statutory limits [Page 14], alongside a 12-metre HDPE liner tear on Tailings Dam #2 that triggered Compliance Order #EMA-BYO-882 on 02 September 2026 [Page 21]. Separate community claims of manual night-time valve discharges on 19 October 2026 remain unverified allegations because automated flow-meter logs were missing [Page 29].`
-        : doc.id === "doc-procurement-ledger"
-        ? `Based on "${doc.title}", Contract #URDC-2026-09 ($1,420,000) was awarded via single-source waiver to AquaChem Logistics Holdings on 09 September 2026—seven days after the EMA Compliance Order [Page 7]. Unit pricing of $1,850/ton reflects a 215% markup over the PRAZ ceiling ($585/ton) with only 140 of 400 tons delivered by 28 October 2026 [Page 12]. Corporate registry cross-referencing flags that the vendor was incorporated 19 days before award [Page 16].`
-        : `Retrieved ${selectedPassages.length} grounded passage(s) from "${doc.title}" matching your query. Inspect the linked page citations below to verify primary evidence before incorporating findings into your reporting.`;
+      topMatched.length > 0
+        ? `Matched ${topMatched.length} passage(s) in "${doc.title}" for your query ("${query}"). ${dynamicSentences.join(" • ")}`
+        : `No exact keyword match for "${query}"—showing all ${selectedPassages.length} indexed passages in "${doc.title}" for manual review: ${dynamicSentences.join(" • ")}`;
 
     const responsePayload: AIQueryResponse = {
       id: `ai-${Date.now()}`,
       query,
       modelUsed: mustUseLocal
         ? "ollama/llama3.1:8b-instruct (Air-Gapped Local Gateway)"
-        : "Connected Newsroom Grounded RAG Engine (v1)",
+        : "Connected Newsroom Dynamic Passage RAG (v2)",
       inferenceMode: mustUseLocal
         ? "Local Ollama (Private)"
         : "Gemini Server-Side API (Approved Public Doc)",
       answerSummary,
       evidenceFindings:
         evidencePassages.length > 0
-          ? evidencePassages.map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`)
-          : selectedPassages.map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`),
+          ? evidencePassages.map(
+              (p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`
+            )
+          : [
+              "No passages in the matched subset were classified as Documented Primary Evidence.",
+            ],
       allegationsToVerify:
         nonEvidencePassages.length > 0
           ? nonEvidencePassages.map(
               (p) => `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
             )
           : [
-              "No unverified allegations matched in this passage subset; still verify primary tables manually.",
+              "Zero unverified allegations in the matched passage set.",
             ],
       humanVerificationChecklist: [
-        `Inspect original source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
-        "Confirm whether claims are classified as Documented Evidence vs. Unverified Allegation.",
-        "Log Right-of-Reply outreach to all named organisations before moving Kanban task to Editorial Review.",
+        `Inspect source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
+        "Verify whether matched claims are Documented Evidence vs. Unverified Allegations.",
+        "Use the 'Insert Citation into Story Draft' button to cite verified pages accurately.",
       ],
       citations,
       timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),

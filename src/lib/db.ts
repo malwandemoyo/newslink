@@ -9,6 +9,7 @@ import {
   INITIAL_EXPERTS,
   INITIAL_COLLABORATIONS,
   INITIAL_INVESTIGATIONS,
+  INITIAL_INVESTIGATION_DRAFTS,
   INITIAL_KANBAN_TASKS,
   INITIAL_DOCUMENTS,
   INITIAL_STORIES,
@@ -19,8 +20,8 @@ import {
   Resource,
   ResourceRequest,
   DispatchBroadcast,
-  DispatchBid,
   CollaborationRequest,
+  InvestigationDraft,
   KanbanTask,
   DocumentRecord,
   StoryPackage,
@@ -61,9 +62,8 @@ function getDb(): DatabaseSync {
     );
   `);
 
-  // Check if already seeded
   const checkStmt = db.prepare(
-    "SELECT COUNT(*) as cnt FROM kv_collections WHERE collection_key = 'resources'"
+    "SELECT COUNT(*) as cnt FROM kv_collections WHERE collection_key = 'investigation_drafts'"
   );
   const row = checkStmt.get() as { cnt: number } | undefined;
 
@@ -90,6 +90,7 @@ function seedDatabaseInternal(db: DatabaseSync) {
   upsert.run("dispatch_broadcasts", JSON.stringify(INITIAL_DISPATCH_BROADCASTS), now);
   upsert.run("collaborations", JSON.stringify(INITIAL_COLLABORATIONS), now);
   upsert.run("kanban_tasks", JSON.stringify(INITIAL_KANBAN_TASKS), now);
+  upsert.run("investigation_drafts", JSON.stringify(INITIAL_INVESTIGATION_DRAFTS), now);
   upsert.run("documents", JSON.stringify(INITIAL_DOCUMENTS), now);
   upsert.run("stories", JSON.stringify(INITIAL_STORIES), now);
   upsert.run("syndication_requests", JSON.stringify(INITIAL_SYNDICATION_REQUESTS), now);
@@ -184,6 +185,10 @@ export function getFullWorkspaceState() {
     kanbanTasks: getCollection<KanbanTask[]>(
       "kanban_tasks",
       INITIAL_KANBAN_TASKS
+    ),
+    investigationDrafts: getCollection<InvestigationDraft[]>(
+      "investigation_drafts",
+      INITIAL_INVESTIGATION_DRAFTS
     ),
     documents: getCollection<DocumentRecord[]>("documents", INITIAL_DOCUMENTS),
     stories: getCollection<StoryPackage[]>("stories", INITIAL_STORIES),

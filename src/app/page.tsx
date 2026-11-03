@@ -9,6 +9,7 @@ import {
   INITIAL_EXPERTS,
   INITIAL_COLLABORATIONS,
   INITIAL_INVESTIGATIONS,
+  INITIAL_INVESTIGATION_DRAFTS,
   INITIAL_KANBAN_TASKS,
   INITIAL_DOCUMENTS,
   INITIAL_STORIES,
@@ -23,6 +24,7 @@ import {
   JournalistProfile,
   CollaborationRequest,
   Investigation,
+  InvestigationDraft,
   KanbanTask,
   KanbanColumnId,
   DocumentRecord,
@@ -32,7 +34,7 @@ import {
 } from "@/types/newsroom";
 import GeographicMap from "@/components/GeographicMap";
 import ResourceDispatchView from "@/components/ResourceDispatchView";
-import KanbanBoard from "@/components/KanbanBoard";
+import InvestigationWorkspaceView from "@/components/InvestigationWorkspaceView";
 import AICopilotView from "@/components/AICopilotView";
 import SecurityAuditView from "@/components/SecurityAuditView";
 import {
@@ -46,9 +48,7 @@ import {
   ShieldCheck,
   Building2,
   CheckCircle2,
-  ArrowRight,
   RotateCcw,
-  Lock,
   Share2,
   MapPin,
   Search,
@@ -66,7 +66,7 @@ type NavSection =
   | "security_audit";
 
 export default function ConnectedNewsroomApp() {
-  const [activeNav, setActiveNav] = useState<NavSection>("resources");
+  const [activeNav, setActiveNav] = useState<NavSection>("investigations");
   const [activeOrgId, setActiveOrgId] = useState<string>("org-byo");
 
   // Server-Backed SQLite State
@@ -87,6 +87,9 @@ export default function ConnectedNewsroomApp() {
   const [investigations, setInvestigations] = useState<Investigation[]>(
     INITIAL_INVESTIGATIONS
   );
+  const [investigationDrafts, setInvestigationDrafts] = useState<
+    InvestigationDraft[]
+  >(INITIAL_INVESTIGATION_DRAFTS);
   const [selectedInvestigationId, setSelectedInvestigationId] =
     useState<string>("inv-umzingwane");
   const [kanbanTasks, setKanbanTasks] =
@@ -132,6 +135,8 @@ export default function ConnectedNewsroomApp() {
       setCollaborations(data.collaborations as CollaborationRequest[]);
     if (Array.isArray(data.investigations))
       setInvestigations(data.investigations as Investigation[]);
+    if (Array.isArray(data.investigationDrafts))
+      setInvestigationDrafts(data.investigationDrafts as InvestigationDraft[]);
     if (Array.isArray(data.kanbanTasks))
       setKanbanTasks(data.kanbanTasks as KanbanTask[]);
     if (Array.isArray(data.documents))
@@ -172,11 +177,14 @@ export default function ConnectedNewsroomApp() {
       if (res.ok) {
         applyServerState(data);
         if (toastText) triggerToast(toastText);
+        return true;
       } else {
         triggerToast(data.error || "Operation failed");
+        return false;
       }
     } catch {
       triggerToast("Network error communicating with SQLite API");
+      return false;
     }
   };
 
@@ -271,13 +279,6 @@ export default function ConnectedNewsroomApp() {
     );
   };
 
-  const selectedInvestigation =
-    investigations.find((i) => i.id === selectedInvestigationId) ||
-    investigations[0];
-  const isAuthorisedForInvestigation =
-    selectedInvestigation.leadOrgId === activeOrgId ||
-    selectedInvestigation.partnerOrgIds.includes(activeOrgId);
-
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#0b1120] text-slate-100">
       {/* Toast Notification */}
@@ -291,7 +292,6 @@ export default function ConnectedNewsroomApp() {
       {/* Left Sidebar Navigation */}
       <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#0d1526] flex flex-col justify-between">
         <div>
-          {/* Brand Header */}
           <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center text-slate-950 font-black text-sm shadow">
@@ -308,18 +308,16 @@ export default function ConnectedNewsroomApp() {
             </div>
           </div>
 
-          {/* Principle Badge */}
           <div className="mx-3 mt-3 p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 space-y-1">
             <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
               Editorial Independence
             </div>
             <p className="text-[10px] text-slate-400 leading-relaxed">
-              Human journalists verify primary evidence and control all publication decisions.
+              Human journalists verify primary evidence and sign off all publication gates.
             </p>
           </div>
 
-          {/* Navigation Menu */}
           <nav className="p-3 space-y-1">
             {(
               [
@@ -343,15 +341,15 @@ export default function ConnectedNewsroomApp() {
                 },
                 {
                   id: "investigations",
-                  label: "Investigations & Kanban",
+                  label: "Investigation Repos",
                   icon: FolderGit2,
-                  badge: `${kanbanTasks.length}`,
+                  badge: "Git+PR",
                 },
                 {
                   id: "ai_copilot",
                   label: "AI Research Copilot",
                   icon: Bot,
-                  badge: "RAG",
+                  badge: `${documents.length} Docs`,
                 },
                 {
                   id: "news_exchange",
@@ -402,7 +400,6 @@ export default function ConnectedNewsroomApp() {
           </nav>
         </div>
 
-        {/* Bottom SQLite Status & Reset */}
         <div className="p-3 border-t border-slate-800/80 space-y-2 bg-slate-950/40">
           <div className="text-[11px] text-slate-400 flex items-center justify-between">
             <span>Database Engine</span>
@@ -422,7 +419,6 @@ export default function ConnectedNewsroomApp() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header: Active Newsroom Organization Switcher */}
         <header className="border-b border-slate-800/90 bg-[#0f172a]/90 backdrop-blur px-5 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400">Active Newsroom:</span>
@@ -463,17 +459,15 @@ export default function ConnectedNewsroomApp() {
 
           <div className="flex items-center gap-2 text-xs">
             <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px]">
-              SQLite + Leaflet PostGIS
+              SQLite + Leaflet + File Parser
             </span>
           </div>
         </header>
 
-        {/* Main Workspace Body */}
         <main className="p-5 flex-1 space-y-6 overflow-y-auto">
           {/* 1. OVERVIEW SECTION */}
           {activeNav === "overview" && (
             <div className="space-y-6">
-              {/* Operational Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div
                   onClick={() => setActiveNav("resources")}
@@ -514,7 +508,7 @@ export default function ConnectedNewsroomApp() {
                   className="p-4 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-teal-500/40 transition cursor-pointer"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Investigation Kanban</span>
+                    <span>Investigation Repositories</span>
                     <FolderGit2 className="w-4 h-4 text-sky-400" />
                   </div>
                   <div className="text-2xl font-bold text-white mt-2">
@@ -522,7 +516,7 @@ export default function ConnectedNewsroomApp() {
                     {kanbanTasks.length} Verified
                   </div>
                   <div className="text-[11px] text-sky-300 mt-1">
-                    Human sign-off enforced →
+                    Kanban, Evidence Repo & PR Review Gate →
                   </div>
                 </div>
 
@@ -543,7 +537,6 @@ export default function ConnectedNewsroomApp() {
                 </div>
               </div>
 
-              {/* Live Leaflet Geospatial Map */}
               <GeographicMap
                 organisations={organisations}
                 resources={resources}
@@ -555,7 +548,6 @@ export default function ConnectedNewsroomApp() {
                 onSelectBroadcast={() => setActiveNav("resources")}
               />
 
-              {/* Participating Independent Newsrooms */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {organisations.map((org) => (
                   <div
@@ -600,7 +592,7 @@ export default function ConnectedNewsroomApp() {
             </div>
           )}
 
-          {/* 2. RESOURCE & FIELD DISPATCH (inDrive + Leihs + Leaflet Map) */}
+          {/* 2. RESOURCE & FIELD DISPATCH */}
           {activeNav === "resources" && (
             <ResourceDispatchView
               organisations={organisations}
@@ -798,124 +790,75 @@ export default function ConnectedNewsroomApp() {
             </div>
           )}
 
-          {/* 4. COLLABORATIVE INVESTIGATIONS & KANBAN WORKSPACE */}
+          {/* 4. GITHUB-STYLE INVESTIGATION REPOSITORY, DRAG-AND-DROP KANBAN, DRAFT EDITOR & PR REVIEW GATE */}
           {activeNav === "investigations" && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {investigations.map((inv) => {
-                  const hasAccess =
-                    inv.leadOrgId === activeOrgId ||
-                    inv.partnerOrgIds.includes(activeOrgId);
-                  const isSelected = inv.id === selectedInvestigationId;
-                  const leadOrg = organisations.find(
-                    (o) => o.id === inv.leadOrgId
-                  );
-
-                  return (
-                    <button
-                      key={inv.id}
-                      onClick={() => setSelectedInvestigationId(inv.id)}
-                      className={`p-4 rounded-xl border text-left transition cursor-pointer ${
-                        isSelected
-                          ? "border-teal-500 bg-[#14223c]"
-                          : "border-slate-800 bg-[#0f172a] hover:border-slate-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[11px] font-mono font-bold text-teal-400">
-                          {inv.codeName}
-                        </span>
-                        {hasAccess ? (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" /> Authorised Member
-                          </span>
-                        ) : (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                            <Lock className="w-3 h-3" /> Private to {leadOrg?.shortName}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-sm font-bold text-white">
-                        {inv.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {inv.summary}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {!isAuthorisedForInvestigation ? (
-                <div className="p-8 rounded-xl border border-rose-500/40 bg-rose-950/20 text-center space-y-3">
-                  <Lock className="w-10 h-10 text-rose-400 mx-auto" />
-                  <h3 className="text-base font-bold text-white">
-                    Encrypted Workspace — Access Restricted by Default
-                  </h3>
-                  <p className="text-xs text-slate-300 max-w-lg mx-auto">
-                    <strong>{selectedInvestigation.codeName}</strong> is private to{" "}
-                    <strong>Harare Investigative Collective</strong>. Connected Newsroom never shares unpublished investigations across organisations without explicit project membership.
-                  </p>
-                  <button
-                    onClick={() => setActiveOrgId("org-hre")}
-                    className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-semibold text-xs cursor-pointer"
-                  >
-                    Switch Active Newsroom to Harare Collective →
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="p-4 rounded-xl border border-slate-800 bg-[#11192d] space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-white">
-                        {selectedInvestigation.codeName}:{" "}
-                        {selectedInvestigation.title}
-                      </span>
-                      <span className="text-xs font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded">
-                        Embargo Until: {selectedInvestigation.embargoUntil}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300">
-                      <strong className="text-teal-300">
-                        Signed Editorial & Attribution Agreement:
-                      </strong>{" "}
-                      {selectedInvestigation.editorialAgreement}
-                    </p>
-                  </div>
-
-                  <KanbanBoard
-                    tasks={kanbanTasks.filter(
-                      (t) => t.investigationId === selectedInvestigation.id
-                    )}
-                    organisations={organisations}
-                    activeOrgId={activeOrgId}
-                    onMoveTask={handleMoveKanbanTask}
-                    onSignOffTask={handleSignOffKanbanTask}
-                    onAddTask={handleAddKanbanTask}
-                    investigationId={selectedInvestigation.id}
-                  />
-                </>
-              )}
-            </div>
+            <InvestigationWorkspaceView
+              investigations={investigations}
+              selectedInvestigationId={selectedInvestigationId}
+              onSelectInvestigation={setSelectedInvestigationId}
+              kanbanTasks={kanbanTasks}
+              documents={documents}
+              drafts={investigationDrafts}
+              organisations={organisations}
+              activeOrgId={activeOrgId}
+              onSwitchOrg={(orgId) => {
+                setActiveOrgId(orgId);
+                triggerToast(`Switched active newsroom to ${orgId}.`);
+              }}
+              onMoveTask={handleMoveKanbanTask}
+              onSignOffTask={handleSignOffKanbanTask}
+              onAddTask={handleAddKanbanTask}
+              onAddTaskComment={async (payload) => {
+                await mutateServerState(
+                  "add_task_comment",
+                  payload,
+                  "Verification note & Right-of-Reply status saved to SQLite."
+                );
+              }}
+              onSaveDraft={async (payload) => {
+                await mutateServerState(
+                  "save_investigation_draft",
+                  payload,
+                  "Story draft & inline citations saved to SQLite repository."
+                );
+              }}
+              onToggleApproval={async (payload) => {
+                await mutateServerState(
+                  "toggle_draft_approval",
+                  payload,
+                  `Updated Pre-Publication Review Gate (${payload.role}).`
+                );
+              }}
+              onPublishToExchange={async (invId) => {
+                const ok = await mutateServerState(
+                  "publish_draft_to_exchange",
+                  { investigationId: invId },
+                  "Story Package merged & published to the News Exchange!"
+                );
+                if (ok) {
+                  setActiveNav("news_exchange");
+                }
+              }}
+              onOpenAICopilot={() => setActiveNav("ai_copilot")}
+            />
           )}
 
-          {/* 5. AI NEWSROOM COPILOT */}
+          {/* 5. AI NEWSROOM COPILOT (With Real File Upload & Citation Insertion) */}
           {activeNav === "ai_copilot" && (
             <AICopilotView
               documents={documents}
               organisations={organisations}
               activeOrgId={activeOrgId}
-              onUploadDocument={(newDoc) => {
-                mutateServerState(
-                  "upload_document",
-                  { document: newDoc },
-                  `Document "${newDoc.title}" indexed into SQLite repository.`
+              onDocumentIndexed={(newState, newDoc) => {
+                applyServerState(newState);
+                triggerToast(
+                  `Parsed & committed "${newDoc.title}" (${newDoc.passages.length} passages, SHA ${newDoc.commitHash}) to SQLite!`
                 );
               }}
               onLogAIQuery={(docTitle, mode, q) => {
                 mutateServerState("log_audit", {
                   category: "AI Query",
-                  actionText: `Executed grounded query ("${q}...") on '${docTitle}' via ${mode}`,
+                  actionText: `Executed dynamic passage query ("${q}...") on '${docTitle}' via ${mode}`,
                   resourceTarget: docTitle,
                 });
               }}
@@ -928,6 +871,20 @@ export default function ConnectedNewsroomApp() {
                     resourceTarget: docTitle,
                   },
                   `Page ${pageNum} marked as Human-Verified in SQLite Audit Log.`
+                );
+              }}
+              onInsertCitationIntoDraft={async (citationTag) => {
+                const current = investigationDrafts.find(
+                  (d) => d.investigationId === "inv-umzingwane"
+                );
+                if (!current) return;
+                await mutateServerState(
+                  "save_investigation_draft",
+                  {
+                    investigationId: "inv-umzingwane",
+                    bodyMarkdown: `${current.bodyMarkdown.trim()}\n\n${citationTag}`,
+                  },
+                  `Inserted "${citationTag}" into Project Umzingwane Story Draft!`
                 );
               }}
             />
@@ -946,7 +903,7 @@ export default function ConnectedNewsroomApp() {
                   </p>
                 </div>
                 <span className="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  Human Editorial Sign-Off Enforced
+                  {stories.length} Verified Packages Available
                 </span>
               </div>
 

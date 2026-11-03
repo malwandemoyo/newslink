@@ -6,6 +6,7 @@ import {
   JournalistProfile,
   CollaborationRequest,
   Investigation,
+  InvestigationDraft,
   KanbanTask,
   DocumentRecord,
   StoryPackage,
@@ -387,6 +388,7 @@ export const INITIAL_INVESTIGATIONS: Investigation[] = [
   {
     id: "inv-umzingwane",
     codeName: "PROJECT UMZINGWANE",
+    repoSlug: "matabeleland-ind/project-umzingwane",
     title: "Umzingwane River Lithium Tailings & Municipal Water Procurement",
     summary:
       "Cross-newsroom investigation examining untreated lithium processing effluent entering the Umzingwane catchment and an uncompetitive $1.42M emergency municipal water treatment chemical tender.",
@@ -402,6 +404,7 @@ export const INITIAL_INVESTIGATIONS: Investigation[] = [
   {
     id: "inv-grid-private",
     codeName: "PROJECT KILOWATT",
+    repoSlug: "harare-collective/project-kilowatt",
     title: "Municipal Solar Microgrid Subcontractor Audit (Harare Internal)",
     summary:
       "Single-organisation pre-investigation into solar streetlighting tenders. Restricted strictly to Harare Investigative Collective members.",
@@ -426,7 +429,17 @@ export const INITIAL_KANBAN_TASKS: KanbanTask[] = [
     assigneeOrgId: "org-hre",
     priority: "High",
     evidenceRef: "Tender Dossier p. 7",
+    rightOfReplyStatus: "Dispatched (72h Window)",
     requiresHumanSignoff: true,
+    comments: [
+      {
+        id: "cmt-1",
+        authorName: "Tariro Moyo",
+        authorOrgId: "org-hre",
+        text: "Pulled CR14 filing from Harare registry. K. Chuma is listed as sole director 19 days before tender waiver.",
+        createdAt: "2026-11-03 16:10",
+      },
+    ],
   },
   {
     id: "task-2",
@@ -438,8 +451,18 @@ export const INITIAL_KANBAN_TASKS: KanbanTask[] = [
     assigneeOrgId: "org-byo",
     priority: "High",
     evidenceRef: "EMA Joint Report p. 14",
+    rightOfReplyStatus: "Not Required",
     requiresHumanSignoff: true,
     signedOffBy: "Sipho Ncube (Verified against physical lab sheet)",
+    comments: [
+      {
+        id: "cmt-2",
+        authorName: "Sipho Ncube",
+        authorOrgId: "org-byo",
+        text: "Confirmed 4.8 mg/L lithium and 1,120 mg/L sulphate match the stamped NUST water lab sheet.",
+        createdAt: "2026-11-03 18:05",
+      },
+    ],
   },
   {
     id: "task-3",
@@ -451,7 +474,9 @@ export const INITIAL_KANBAN_TASKS: KanbanTask[] = [
     assigneeOrgId: "org-cite",
     priority: "High",
     evidenceRef: "FX6 Field Reel #02",
+    rightOfReplyStatus: "Not Required",
     requiresHumanSignoff: true,
+    comments: [],
   },
   {
     id: "task-4",
@@ -463,8 +488,10 @@ export const INITIAL_KANBAN_TASKS: KanbanTask[] = [
     assigneeOrgId: "org-byo",
     priority: "High",
     evidenceRef: "Legal Dispatch #RR-09",
+    rightOfReplyStatus: "Response Logged",
     requiresHumanSignoff: true,
     signedOffBy: "Adv. Rudo Chikwanda (Legal Vetted)",
+    comments: [],
   },
   {
     id: "task-5",
@@ -476,8 +503,68 @@ export const INITIAL_KANBAN_TASKS: KanbanTask[] = [
     assigneeOrgId: "org-byo",
     priority: "Standard",
     evidenceRef: "Story Package #SP-01",
+    rightOfReplyStatus: "Response Logged",
     requiresHumanSignoff: true,
     signedOffBy: "Sipho Ncube & Nqobile Dube",
+    comments: [],
+  },
+];
+
+export const INITIAL_INVESTIGATION_DRAFTS: InvestigationDraft[] = [
+  {
+    investigationId: "inv-umzingwane",
+    headline: "Liner Tears & Overpriced Flocculants: How the Umzingwane Catchment Crisis Unfolded",
+    subheadline:
+      "Cross-newsroom investigation uncovers a 340% statutory effluent breach downstream of Esigodini Tailings Dam #2 and a $1.42M single-source chemical contract awarded days later.",
+    bodyMarkdown: `### 1. The Effluent Breach at Weir #3
+
+Four hundred metres downstream of Tailings Dam #2 in Esigodini, official laboratory samples collected on 14 August 2026 recorded dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L—exceeding statutory Red-Class effluent thresholds by 340% [Citation: 2026 Auditor-General & EMA Joint Inspection Report, p. 14].
+
+During a follow-up physical inspection on 02 September 2026, environmental inspectors documented a 12-metre tear in the high-density polyethylene (HDPE) geomembrane liner on the eastern embankment and issued Compliance Order #EMA-BYO-882 halting wet-slurry pumping [Citation: 2026 Auditor-General & EMA Joint Inspection Report, p. 21].
+
+### 2. The $1.42M Emergency Procurement Waiver
+
+Seven days after the EMA Compliance Order was issued, the Umzingwane Rural District Council waived competitive tender procedures under Minute 11.3 to award a USD $1,420,000 contract (#URDC-2026-09) to AquaChem Logistics Holdings [Citation: Umzingwane RDC Emergency Water Chemical Tender Dossier, p. 7].
+
+Procurement schedules show the council was invoiced USD $1,850 per metric ton of aluminium sulphate—a 215% markup over the national PRAZ ceiling of USD $585/ton—while waybill logs confirm only 140 of the 400 contracted tons had been delivered by 28 October 2026 [Citation: Umzingwane RDC Emergency Water Chemical Tender Dossier, p. 12].
+
+### 3. Right of Reply & Unverified Community Submissions
+
+While three ward councillors alleged during public hearings that sluice valves were manually opened on the night of 19 October 2026, inspectors noted automated flow-meter logs were missing for that four-hour window; our reporting treats those night-discharge claims as unverified pending independent sensor corroboration [Citation: 2026 Auditor-General & EMA Joint Inspection Report, p. 29].`,
+    licenseType: "CC BY-NC-ND 4.0 (Network Attribution)",
+    attributionText:
+      "Reported jointly by Matabeleland Independent (Bulawayo), Harare Investigative Collective, and CITE ZW via Connected Newsroom.",
+    mediaAssets: [
+      "Full 2,400-word Verified Print Investigation (EN / Ndebele / Shona)",
+      "Sony FX6 4K Field Footage at Weir #3 (CITE ZW)",
+      "Redacted EMA Lab Tables & PRAZ Unit Price Comparison Chart",
+    ],
+    approvals: [
+      {
+        role: "Lead Editor",
+        orgId: "org-byo",
+        reviewerName: "Sipho Ncube (Matabeleland Ind.)",
+        approved: true,
+        approvedAt: "2026-11-04 08:10",
+        note: "Primary lab figures and council minutes verified against physical copies.",
+      },
+      {
+        role: "Partner Data Desk",
+        orgId: "org-hre",
+        reviewerName: "Tariro Moyo (Harare Collective)",
+        approved: true,
+        approvedAt: "2026-11-04 09:05",
+        note: "PRAZ price ceiling and CR14 incorporation dates double-checked.",
+      },
+      {
+        role: "Pre-Publication Legal",
+        orgId: "org-hre",
+        reviewerName: "Adv. Rudo Chikwanda (Legal Review)",
+        approved: false,
+        note: "Awaiting final sign-off on Right-of-Reply paragraph before publishing to News Exchange.",
+      },
+    ],
+    lastUpdatedAt: "2026-11-04 11:45",
   },
 ];
 
@@ -486,6 +573,8 @@ export const INITIAL_DOCUMENTS: DocumentRecord[] = [
     id: "doc-ema-audit",
     investigationId: "inv-umzingwane",
     title: "2026 Auditor-General & EMA Joint Inspection Report: Umzingwane Catchment",
+    fileName: "EMA_AuditorGeneral_Umzingwane_2026.pdf",
+    commitHash: "8f4c2a1",
     sourceOrgId: "org-byo",
     allowedOrgIds: ["org-byo", "org-cite", "org-hre"],
     documentType: "Public Audit Report",
@@ -550,6 +639,8 @@ export const INITIAL_DOCUMENTS: DocumentRecord[] = [
     id: "doc-procurement-ledger",
     investigationId: "inv-umzingwane",
     title: "Umzingwane RDC Emergency Water Chemical Tender Dossier (#URDC-2026-09)",
+    fileName: "URDC_Tender_2026_09_Procurement_Ledger.pdf",
+    commitHash: "3e91b04",
     sourceOrgId: "org-hre",
     allowedOrgIds: ["org-byo", "org-cite", "org-hre"],
     documentType: "Procurement Ledger",
@@ -608,6 +699,8 @@ export const INITIAL_DOCUMENTS: DocumentRecord[] = [
     id: "doc-private-hre",
     investigationId: "inv-grid-private",
     title: "Harare Municipal Solar Subcontractor Registry (Strictly Confidential)",
+    fileName: "HRE_Solar_Subcontractors_Restricted.csv",
+    commitHash: "91c07d2",
     sourceOrgId: "org-hre",
     allowedOrgIds: ["org-hre"],
     documentType: "Procurement Ledger",
