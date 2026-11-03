@@ -1,62 +1,53 @@
-# Connected Newsroom — Complete Linked Open-Source Stack
-# Links the Next.js Portal with cloned open-source apps in ./external-apps/
-# - Planka (Kanban Verification Board)       -> http://localhost:3001 (./external-apps/planka)
-# - Homebox (Equipment & Asset Lending)      -> http://localhost:3002 (./external-apps/homebox)
-# - Paperless-ngx (Free Tesseract OCR)       -> http://localhost:8000 (./external-apps/paperless-ngx)
-# - Open-WebUI + Ollama (Google Gemma 3 4B)  -> http://localhost:8080
-
 services:
-  # 1. Connected Newsroom Unified Portal (Next.js App + Integrated Tesseract.js OCR + SQLite)
-  portal:
+  newsroom-app:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: cn-newsroom-app
     ports:
       - "3000:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMMA_MODEL=${GEMMA_MODEL:-gemma-3-4b-it}
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - PLANKA_URL=http://localhost:3001
-      - HOMEBOX_URL=http://localhost:3002
-      - PAPERLESS_OCR_URL=http://localhost:8000
-      - OPEN_WEBUI_URL=http://localhost:8080
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - KANBAN_SERVICE_URL=http://localhost:3001
+      - GEAR_SERVICE_URL=http://localhost:3002
+      - EVIDENCE_VAULT_URL=http://localhost:8000
+    volumes:
+      - newsroom_sqlite:/app/data
     depends_on:
-      - postgres
-      - planka
-      - homebox
-      - paperless-ngx
-      - open-webui
+      - kanban-board
+      - gear-exchange
+      - evidence-vault
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
-  # 2. Planka — Cloned Open-Source Kanban Board (./external-apps/planka)
-  planka:
+  kanban-board:
     image: ghcr.io/plankanban/planka:latest
+    container_name: cn-kanban-board
     ports:
       - "3001:1337"
     restart: unless-stopped
     environment:
       - BASE_URL=http://localhost:3001
-      - DATABASE_URL=postgresql://postgres:newsroom_pass@postgres:5432/planka
-      - SECRET_KEY=connected-newsroom-planka-secret-key-2026
+      - DATABASE_URL=postgresql://postgres:newsroom_pass@postgres:5432/kanban
+      - SECRET_KEY=connected-newsroom-kanban-secret-2026
       - DEFAULT_ADMIN_EMAIL=editor@connectednewsroom.org
       - DEFAULT_ADMIN_PASSWORD=newsroom-admin
-      - DEFAULT_ADMIN_NAME=Connected Newsroom Desk
+      - DEFAULT_ADMIN_NAME=Editorial Desk
       - DEFAULT_ADMIN_USERNAME=editor
     depends_on:
       - postgres
     volumes:
-      - planka_avatars:/app/public/user-avatars
-      - planka_attachments:/app/private/attachments
+      - kanban_avatars:/app/public/user-avatars
+      - kanban_attachments:/app/private/attachments
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
-  # 3. Homebox — Cloned Open-Source Equipment Inventory & Lending (./external-apps/homebox)
-  homebox:
+  gear-exchange:
     image: ghcr.io/sysadminsmedia/homebox:latest
+    container_name: cn-gear-exchange
     ports:
       - "3002:7745"
     restart: unless-stopped
@@ -66,92 +57,67 @@ services:
       - HBOX_WEB_MAX_UPLOAD_SIZE=25
       - HBOX_OPTIONS_ALLOW_REGISTRATION=true
     volumes:
-      - homebox_data:/data/
+      - gear_data:/data/
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
-  # 4. Paperless-ngx — Cloned Open-Source Tesseract OCR & Document Archive (./external-apps/paperless-ngx)
-  paperless-ngx:
+  evidence-vault:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: cn-evidence-vault
     ports:
       - "8000:8000"
     restart: unless-stopped
     environment:
       - PAPERLESS_REDIS=redis://redis:6379
       - PAPERLESS_DBHOST=postgres
-      - PAPERLESS_DBNAME=paperless
+      - PAPERLESS_DBNAME=kanban
       - PAPERLESS_DBUSER=postgres
       - PAPERLESS_DBPASS=newsroom_pass
       - PAPERLESS_OCR_LANGUAGE=eng
       - PAPERLESS_ADMIN_USER=editor
       - PAPERLESS_ADMIN_PASSWORD=newsroom-admin
       - PAPERLESS_URL=http://localhost:8000
+      - PAPERLESS_APP_TITLE=Connected Newsroom Evidence Vault
     depends_on:
       - postgres
       - redis
     volumes:
-      - paperless_data:/usr/src/paperless/data
-      - paperless_media:/usr/src/paperless/media
-      - paperless_consume:/usr/src/paperless/consume
+      - vault_data:/usr/src/paperless/data
+      - vault_media:/usr/src/paperless/media
+      - vault_consume:/usr/src/paperless/consume
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
-  # 5. Open-WebUI + Ollama — Open-Source RAG Workspace & Google Small LLMs (Gemma 3 4B)
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - WEBUI_NAME=Connected Newsroom AI (Google Gemma 3 + RAG)
-    depends_on:
-      - ollama
-    volumes:
-      - open_webui_data:/app/backend/data
-    networks:
-      - newsroom_mesh
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    restart: unless-stopped
-    volumes:
-      - ollama_models:/root/.ollama
-    networks:
-      - newsroom_mesh
-
-  # 6. Shared Backing Services (PostgreSQL 16 + Redis)
   postgres:
     image: postgres:16-alpine
+    container_name: cn-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: newsroom_pass
-      POSTGRES_DB: planka
+      POSTGRES_DB: kanban
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
   redis:
     image: redis:7-alpine
+    container_name: cn-redis
     restart: unless-stopped
     networks:
-      - newsroom_mesh
+      - newsroom_net
 
 volumes:
+  newsroom_sqlite:
   postgres_data:
-  planka_avatars:
-  planka_attachments:
-  homebox_data:
-  paperless_data:
-  paperless_media:
-  paperless_consume:
-  open_webui_data:
-  ollama_models:
+  kanban_avatars:
+  kanban_attachments:
+  gear_data:
+  vault_data:
+  vault_media:
+  vault_consume:
 
 networks:
-  newsroom_mesh:
+  newsroom_net:
     driver: bridge

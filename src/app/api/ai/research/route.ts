@@ -42,13 +42,13 @@ export async function POST(req: NextRequest) {
       documentId,
       activeOrgId,
       customDocument,
-      preferredMode = "auto",
+      apiKey,
     }: {
       query: string;
       documentId: string;
       activeOrgId: string;
       customDocument?: DocumentRecord;
-      preferredMode?: "auto" | "local" | "cloud";
+      apiKey?: string;
     } = body;
 
     if (!query || !activeOrgId) {
@@ -67,25 +67,19 @@ export async function POST(req: NextRequest) {
 
     if (!doc) {
       return NextResponse.json(
-        { error: "Document not found in SQLite repository." },
+        { error: "Document not found in repository." },
         { status: 404 }
       );
     }
 
-    // 1. Strict Multi-Organisation Permission Enforcement
     if (!doc.allowedOrgIds.includes(activeOrgId)) {
       return NextResponse.json(
         {
-          error: `ACCESS DENIED: Organisation '${activeOrgId}' does not have permission to query '${doc.title}'. Cross-organisation ACL enforced.`,
+          error: `ACCESS DENIED: Organisation '${activeOrgId}' does not have permission to query '${doc.title}'.`,
         },
         { status: 403 }
       );
     }
-
-    // 2. Consent & Safeguard Routing (Local Ollama vs Server-Side Gemini)
-    const mustUseLocal =
-      doc.aiConsentStatus === "Local Inference Only (Confidential)" ||
-      preferredMode === "local";
 
     const queryTokens = query
       .toLowerCase()
@@ -93,7 +87,6 @@ export async function POST(req: NextRequest) {
       .split(/\s+/)
       .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
 
-    // Score each passage by token overlap + entity match
     const scoredPassages = doc.passages
       .map((p) => {
         const hay =
@@ -124,59 +117,10 @@ export async function POST(req: NextRequest) {
       classification: p.classification,
     }));
 
-    // Optional Local Ollama (Google Gemma 3 4B) call when running in local/air-gapped mode
-    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-    const gemmaModel = process.env.GEMMA_MODEL || "gemma3:4b";
-    if (mustUseLocal) {
-      try {
-        const contextBlock = selectedPassages
-          .map(
-            (p) =>
-              `[Page ${p.pageNumber} | ${p.sectionTitle} | Classification: ${p.classification}]: "${p.quote}"`
-          )
-          .join("\n\n");
-        const ollamaRes = await fetch(`${ollamaBaseUrl}/api/generate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: gemmaModel,
-            stream: false,
-            prompt: `Answer the journalist's question strictly using the passages below. Cite page numbers like [Page X] and separate Documented Evidence from Unverified Allegations.\nQuestion: ${query}\nPassages:\n${contextBlock}`,
-          }),
-          signal: AbortSignal.timeout(2500),
-        });
-        if (ollamaRes.ok) {
-          const ollamaData = await ollamaRes.json();
-          if (ollamaData?.response) {
-            return NextResponse.json({
-              id: `ai-${Date.now()}`,
-              query,
-              modelUsed: `ollama/${gemmaModel} (Google Small LLM Local)`,
-              inferenceMode: "Local Ollama (Private)",
-              answerSummary: ollamaData.response,
-              evidenceFindings: selectedPassages
-                .filter((p) => p.classification === "Documented Evidence")
-                .map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`),
-              allegationsToVerify: selectedPassages
-                .filter((p) => p.classification !== "Documented Evidence")
-                .map((p) => `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`),
-              humanVerificationChecklist: [
-                `Inspect original source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
-              ],
-              citations,
-              timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
-            } satisfies AIQueryResponse);
-          }
-        }
-      } catch {
-        // Local Ollama container not active yet; fall through to grounded passage index
-      }
-    }
+    const geminiApiKey = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+    const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-    // Optional live Google Small LLM (gemma-3-4b-it / gemini-2.5-flash-lite) call if GEMINI_API_KEY is configured
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    const googleSmallModel = process.env.GOOGLE_SMALL_MODEL || "gemini-2.5-flash-lite";
-    if (geminiApiKey && !mustUseLocal) {
+    if (geminiApiKey) {
       try {
         const contextBlock = selectedPassages
           .map(
@@ -186,7 +130,7 @@ export async function POST(req: NextRequest) {
           .join("\n\n");
 
         const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${googleSmallModel}:generateContent?key=${geminiApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -216,12 +160,14 @@ ${contextBlock}`,
             return NextResponse.json({
               id: `ai-${Date.now()}`,
               query,
-              modelUsed: "gemini-2.5-flash (Grounded RAG)",
+              modelUsed: `${geminiModel} (Google Gemini API)`,
               inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
               answerSummary: generatedText,
               evidenceFindings: selectedPassages
                 .filter((p) => p.classification === "Documented Evidence")
-                .map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`),
+                .map(
+                  (p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`
+                ),
               allegationsToVerify: selectedPassages
                 .filter((p) => p.classification !== "Documented Evidence")
                 .map(
@@ -229,8 +175,8 @@ ${contextBlock}`,
                     `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
                 ),
               humanVerificationChecklist: [
-                `Inspect original source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
-                "Cross-check figures against physical certificates before inserting citation into story draft.",
+                `Inspect source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
+                "Cross-check figures against primary records before inserting citation into story draft.",
               ],
               citations,
               timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -238,11 +184,10 @@ ${contextBlock}`,
           }
         }
       } catch {
-        // Fall through to dynamic grounded synthesis
+        // Fallback if network or key fails
       }
     }
 
-    // Dynamic Query-Specific Grounded Synthesis
     const evidencePassages = selectedPassages.filter(
       (p) => p.classification === "Documented Evidence"
     );
@@ -260,39 +205,30 @@ ${contextBlock}`,
 
     const answerSummary =
       topMatched.length > 0
-        ? `Matched ${topMatched.length} passage(s) in "${doc.title}" for your query ("${query}"). ${dynamicSentences.join(" • ")}`
-        : `No exact keyword match for "${query}"—showing all ${selectedPassages.length} indexed passages in "${doc.title}" for manual review: ${dynamicSentences.join(" • ")}`;
+        ? `Matched ${topMatched.length} passage(s) in "${doc.title}": ${dynamicSentences.join(" • ")}`
+        : `Showing ${selectedPassages.length} indexed passages in "${doc.title}": ${dynamicSentences.join(" • ")}`;
 
     const responsePayload: AIQueryResponse = {
       id: `ai-${Date.now()}`,
       query,
-      modelUsed: mustUseLocal
-        ? "ollama/llama3.1:8b-instruct (Air-Gapped Local Gateway)"
-        : "Connected Newsroom Dynamic Passage RAG (v2)",
-      inferenceMode: mustUseLocal
-        ? "Local Ollama (Private)"
-        : "Gemini Server-Side API (Approved Public Doc)",
+      modelUsed: `${geminiModel} (Grounded Index — Set GEMINI_API_KEY for Live LLM)`,
+      inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
       answerSummary,
       evidenceFindings:
         evidencePassages.length > 0
           ? evidencePassages.map(
               (p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`
             )
-          : [
-              "No passages in the matched subset were classified as Documented Primary Evidence.",
-            ],
+          : ["No passages matched as Documented Evidence."],
       allegationsToVerify:
         nonEvidencePassages.length > 0
           ? nonEvidencePassages.map(
               (p) => `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
             )
-          : [
-              "Zero unverified allegations in the matched passage set.",
-            ],
+          : ["Zero unverified allegations in matched passages."],
       humanVerificationChecklist: [
         `Inspect source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
-        "Verify whether matched claims are Documented Evidence vs. Unverified Allegations.",
-        "Use the 'Insert Citation into Story Draft' button to cite verified pages accurately.",
+        "Use '+ Add Quote & Cite in Story' to insert verified passages.",
       ],
       citations,
       timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),

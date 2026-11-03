@@ -62,9 +62,15 @@ export default function AICopilotView({
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadExcerpt, setUploadExcerpt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
   const [uploadConsent, setUploadConsent] = useState<
     "Approved for Cloud & Local AI" | "Local Inference Only (Confidential)"
-  >("Local Inference Only (Confidential)");
+  >("Approved for Cloud & Local AI");
+
+  React.useEffect(() => {
+    const saved = window.localStorage.getItem("cn_gemini_api_key");
+    if (saved) setGeminiApiKey(saved);
+  }, []);
 
   const [aiResult, setAiResult] = useState<AIQueryResponse | null>({
     id: "ai-initial",
@@ -123,7 +129,7 @@ export default function AICopilotView({
           documentId: docIdToUse,
           activeOrgId,
           customDocument: docObj,
-          preferredMode: "auto",
+          apiKey: geminiApiKey,
         }),
       });
 
@@ -219,13 +225,25 @@ export default function AICopilotView({
           </div>
         </div>
 
-        <button
-          onClick={() => setShowUploadModal(!showUploadModal)}
-          className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
-        >
-          <Upload className="w-4 h-4" />
-          Upload Source Document (.PDF / .TXT)
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="password"
+            value={geminiApiKey}
+            onChange={(e) => {
+              setGeminiApiKey(e.target.value);
+              window.localStorage.setItem("cn_gemini_api_key", e.target.value);
+            }}
+            placeholder="Paste GEMINI_API_KEY..."
+            className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-teal-400 w-48"
+          />
+          <button
+            onClick={() => setShowUploadModal(!showUploadModal)}
+            className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
+          >
+            <Upload className="w-4 h-4" />
+            Upload Document
+          </button>
+        </div>
       </div>
 
       {/* Upload Modal */}
