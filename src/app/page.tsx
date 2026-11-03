@@ -66,6 +66,7 @@ type NavSection =
   | "security_audit";
 
 export default function ConnectedNewsroomApp() {
+  const [mounted, setMounted] = useState<boolean>(false);
   const [activeNav, setActiveNav] = useState<NavSection>("investigations");
   const [activeOrgId, setActiveOrgId] = useState<string>("org-byo");
 
@@ -152,6 +153,7 @@ export default function ConnectedNewsroomApp() {
 
   // Load initial state from SQLite API
   useEffect(() => {
+    setMounted(true);
     fetch("/api/state")
       .then((res) => res.json())
       .then((data) => {
@@ -278,6 +280,10 @@ export default function ConnectedNewsroomApp() {
       `Syndication license unlocked for ${activeOrg.name} with mandatory attribution lock.`
     );
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#0b1120] text-slate-100">
