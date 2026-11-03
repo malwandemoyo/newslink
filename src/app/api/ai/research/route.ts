@@ -121,70 +121,82 @@ export async function POST(req: NextRequest) {
     const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
     if (geminiApiKey) {
-      try {
-        const contextBlock = selectedPassages
-          .map(
-            (p) =>
-              `[Page ${p.pageNumber} | ${p.sectionTitle} | Classification: ${p.classification}]: "${p.quote}"`
-          )
-          .join("\n\n");
+      const contextBlock = selectedPassages
+        .map(
+          (p) =>
+            `[Page ${p.pageNumber} | ${p.sectionTitle} | Classification: ${p.classification}]: "${p.quote}"`
+        )
+        .join("\n\n");
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-          {
+      const promptText = `You are the Connected Newsroom Research Copilot. Answer the journalist's question strictly using the provided passages. Cite exact page numbers in brackets like [Page X] and explicitly separate Documented Evidence from Unverified Allegations.
+Question: ${query}
+
+Passages from "${doc.title}":
+${contextBlock}`;
+
+      const candidateUrls = geminiApiKey.startsWith("AQ.")
+        ? [
+            `https://aiplatform.googleapis.com/v1/projects/487947928800/locations/global/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+            `https://aiplatform.googleapis.com/v1beta1/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+            `https://aiplatform.googleapis.com/v1/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+          ]
+        : [
+            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+          ];
+
+      for (const endpointUrl of candidateUrls) {
+        try {
+          const geminiRes = await fetch(endpointUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [
                 {
-                  parts: [
-                    {
-                      text: `You are the Connected Newsroom Research Copilot. Answer the journalist's question strictly using the provided passages. Cite exact page numbers in brackets like [Page X] and explicitly separate Documented Evidence from Unverified Allegations.
-Question: ${query}
-
-Passages from "${doc.title}":
-${contextBlock}`,
-                    },
-                  ],
+                  role: "user",
+                  parts: [{ text: promptText }],
                 },
               ],
             }),
-          }
-        );
+          });
 
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          const generatedText =
-            geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generatedText) {
-            return NextResponse.json({
-              id: `ai-${Date.now()}`,
-              query,
-              modelUsed: `${geminiModel} (Google Gemini API)`,
-              inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
-              answerSummary: generatedText,
-              evidenceFindings: selectedPassages
-                .filter((p) => p.classification === "Documented Evidence")
-                .map(
-                  (p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`
-                ),
-              allegationsToVerify: selectedPassages
-                .filter((p) => p.classification !== "Documented Evidence")
-                .map(
-                  (p) =>
-                    `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
-                ),
-              humanVerificationChecklist: [
-                `Inspect source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
-                "Cross-check figures against primary records before inserting citation into story draft.",
-              ],
-              citations,
-              timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
-            } satisfies AIQueryResponse);
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const generatedText =
+              geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (generatedText) {
+              return NextResponse.json({
+                id: `ai-${Date.now()}`,
+                query,
+                modelUsed: `${geminiModel} (Vertex / Gemini API)`,
+                inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
+                answerSummary: generatedText,
+                evidenceFindings: selectedPassages
+                  .filter((p) => p.classification === "Documented Evidence")
+                  .map(
+                    (p) =>
+                      `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`
+                  ),
+                allegationsToVerify: selectedPassages
+                  .filter((p) => p.classification !== "Documented Evidence")
+                  .map(
+                    (p) =>
+                      `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`
+                  ),
+                humanVerificationChecklist: [
+                  `Inspect source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
+                  "Cross-check figures against primary records before inserting citation into story draft.",
+                ],
+                citations,
+                timestamp: new Date()
+                  .toISOString()
+                  .slice(0, 16)
+                  .replace("T", " "),
+              } satisfies AIQueryResponse);
+            }
           }
+        } catch {
+          // Try next endpoint or fall back
         }
-      } catch {
-        // Fallback if network or key fails
       }
     }
 
