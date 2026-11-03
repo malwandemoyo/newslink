@@ -11,6 +11,7 @@ import {
 } from "@/types/newsroom";
 import KanbanBoard from "./KanbanBoard";
 import AICopilotView from "./AICopilotView";
+import OpenSourceAppsBridge from "./OpenSourceAppsBridge";
 import {
   FolderGit2,
   FileEdit,
@@ -147,6 +148,11 @@ export default function InvestigationWorkspaceView({
 
   return (
     <div className="space-y-6">
+      {/* Linked Open-Source Engines (Paperless-ngx OCR, Open-WebUI + Google Gemma 3, Planka Kanban) */}
+      <OpenSourceAppsBridge
+        filterModule={workflowStep === "kanban" ? "kanban" : "ai"}
+      />
+
       {/* Clean Page Header & Project Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
         <div>

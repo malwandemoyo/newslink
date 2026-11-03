@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import zlib from "node:zlib";
+import Tesseract from "tesseract.js";
 import {
   getCollection,
   setCollection,
@@ -133,8 +134,26 @@ export async function POST(req: NextRequest) {
         }
         const arrayBuffer = await file.arrayBuffer();
         const buf = Buffer.from(arrayBuffer);
+        const lowerName = file.name.toLowerCase();
 
-        if (file.name.toLowerCase().endsWith(".pdf")) {
+        if (
+          lowerName.endsWith(".png") ||
+          lowerName.endsWith(".jpg") ||
+          lowerName.endsWith(".jpeg") ||
+          lowerName.endsWith(".webp") ||
+          lowerName.endsWith(".bmp")
+        ) {
+          try {
+            const ocrResult = await Tesseract.recognize(buf, "eng");
+            rawText =
+              ocrResult.data.text?.trim() ||
+              fallbackText ||
+              `Tesseract.js OCR processed image ${file.name}.`;
+          } catch {
+            rawText =
+              fallbackText || `Tesseract.js OCR fallback for ${file.name}.`;
+          }
+        } else if (lowerName.endsWith(".pdf")) {
           const pdfText = extractTextFromPdfBuffer(buf);
           rawText =
             pdfText.length > 40

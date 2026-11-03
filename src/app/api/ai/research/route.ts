@@ -124,8 +124,58 @@ export async function POST(req: NextRequest) {
       classification: p.classification,
     }));
 
-    // Optional live Gemini call if GEMINI_API_KEY is configured and allowed by document consent
+    // Optional Local Ollama (Google Gemma 3 4B) call when running in local/air-gapped mode
+    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+    const gemmaModel = process.env.GEMMA_MODEL || "gemma3:4b";
+    if (mustUseLocal) {
+      try {
+        const contextBlock = selectedPassages
+          .map(
+            (p) =>
+              `[Page ${p.pageNumber} | ${p.sectionTitle} | Classification: ${p.classification}]: "${p.quote}"`
+          )
+          .join("\n\n");
+        const ollamaRes = await fetch(`${ollamaBaseUrl}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: gemmaModel,
+            stream: false,
+            prompt: `Answer the journalist's question strictly using the passages below. Cite page numbers like [Page X] and separate Documented Evidence from Unverified Allegations.\nQuestion: ${query}\nPassages:\n${contextBlock}`,
+          }),
+          signal: AbortSignal.timeout(2500),
+        });
+        if (ollamaRes.ok) {
+          const ollamaData = await ollamaRes.json();
+          if (ollamaData?.response) {
+            return NextResponse.json({
+              id: `ai-${Date.now()}`,
+              query,
+              modelUsed: `ollama/${gemmaModel} (Google Small LLM Local)`,
+              inferenceMode: "Local Ollama (Private)",
+              answerSummary: ollamaData.response,
+              evidenceFindings: selectedPassages
+                .filter((p) => p.classification === "Documented Evidence")
+                .map((p) => `[Page ${p.pageNumber} — ${p.sectionTitle}] ${p.quote}`),
+              allegationsToVerify: selectedPassages
+                .filter((p) => p.classification !== "Documented Evidence")
+                .map((p) => `[Page ${p.pageNumber} — ${p.classification}] ${p.quote}`),
+              humanVerificationChecklist: [
+                `Inspect original source pages (${selectedPassages.map((p) => `p. ${p.pageNumber}`).join(", ")}) in "${doc.title}".`,
+              ],
+              citations,
+              timestamp: new Date().toISOString().slice(0, 16).replace("T", " "),
+            } satisfies AIQueryResponse);
+          }
+        }
+      } catch {
+        // Local Ollama container not active yet; fall through to grounded passage index
+      }
+    }
+
+    // Optional live Google Small LLM (gemma-3-4b-it / gemini-2.5-flash-lite) call if GEMINI_API_KEY is configured
     const geminiApiKey = process.env.GEMINI_API_KEY;
+    const googleSmallModel = process.env.GOOGLE_SMALL_MODEL || "gemini-2.5-flash-lite";
     if (geminiApiKey && !mustUseLocal) {
       try {
         const contextBlock = selectedPassages
@@ -136,7 +186,7 @@ export async function POST(req: NextRequest) {
           .join("\n\n");
 
         const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${googleSmallModel}:generateContent?key=${geminiApiKey}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

@@ -251,11 +251,11 @@ export default function AICopilotView({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block text-slate-300 font-medium mb-1">
-                Choose File (.pdf, .txt, .csv, .md)
+                Choose File (.pdf, .png/.jpg OCR, .txt, .csv)
               </label>
               <input
                 type="file"
-                accept=".pdf,.txt,.md,.csv,.json"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.json"
                 onChange={(e) => {
                   const f = e.target.files?.[0] || null;
                   setSelectedFile(f);

@@ -1,107 +1,157 @@
-# Connected Newsroom — Open-Source Self-Hosted Infrastructure Stack
-# Designed for independent media networks: Modular Monolith + OSS Companions
-# Public access via Caddy HTTPS; private node administration via Tailscale/Headscale.
+# Connected Newsroom — Complete Linked Open-Source Stack
+# Links the Next.js Portal with cloned open-source apps in ./external-apps/
+# - Planka (Kanban Verification Board)       -> http://localhost:3001 (./external-apps/planka)
+# - Homebox (Equipment & Asset Lending)      -> http://localhost:3002 (./external-apps/homebox)
+# - Paperless-ngx (Free Tesseract OCR)       -> http://localhost:8000 (./external-apps/paperless-ngx)
+# - Open-WebUI + Ollama (Google Gemma 3 4B)  -> http://localhost:8080
 
 services:
-  # 1. Reverse Proxy & Automatic HTTPS (Public Ingress)
-  caddy:
-    image: caddy:2.8-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - portal
-    networks:
-      - public_ingress
-      - newsroom_internal
-
-  # 2. Connected Newsroom Unified Portal (Next.js App + Server-Side AI Gateway)
+  # 1. Connected Newsroom Unified Portal (Next.js App + Integrated Tesseract.js OCR + SQLite)
   portal:
     build:
       context: .
       dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://newsroom:${POSTGRES_PASSWORD:-changeme_in_prod}@postgres:5432/connected_newsroom
-      - QDRANT_URL=http://qdrant:6333
-      - LITELLM_BASE_URL=http://litellm:4000
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - DEFAULT_AI_MODE=${DEFAULT_AI_MODE:-local_first}
+      - GEMMA_MODEL=${GEMMA_MODEL:-gemma-3-4b-it}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - PLANKA_URL=http://localhost:3001
+      - HOMEBOX_URL=http://localhost:3002
+      - PAPERLESS_OCR_URL=http://localhost:8000
+      - OPEN_WEBUI_URL=http://localhost:8080
     depends_on:
       - postgres
-      - qdrant
+      - planka
+      - homebox
+      - paperless-ngx
+      - open-webui
     networks:
-      - newsroom_internal
+      - newsroom_mesh
 
-  # 3. Primary Database + Geospatial Discovery (PostgreSQL 16 + PostGIS + Row-Level Security)
-  postgres:
-    image: postgis/postgis:16-3.4-alpine
+  # 2. Planka — Cloned Open-Source Kanban Board (./external-apps/planka)
+  planka:
+    image: ghcr.io/plankanban/planka:latest
+    ports:
+      - "3001:1337"
     restart: unless-stopped
     environment:
-      POSTGRES_USER: newsroom
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_prod}
-      POSTGRES_DB: connected_newsroom
+      - BASE_URL=http://localhost:3001
+      - DATABASE_URL=postgresql://postgres:newsroom_pass@postgres:5432/planka
+      - SECRET_KEY=connected-newsroom-planka-secret-key-2026
+      - DEFAULT_ADMIN_EMAIL=editor@connectednewsroom.org
+      - DEFAULT_ADMIN_PASSWORD=newsroom-admin
+      - DEFAULT_ADMIN_NAME=Connected Newsroom Desk
+      - DEFAULT_ADMIN_USERNAME=editor
+    depends_on:
+      - postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - planka_avatars:/app/public/user-avatars
+      - planka_attachments:/app/private/attachments
     networks:
-      - newsroom_internal
+      - newsroom_mesh
 
-  # 4. Vector Search for Permission-Aware Document RAG (Qdrant)
-  # Enforces newsroom_id and investigation_id payload filtering on every query
-  qdrant:
-    image: qdrant/qdrant:v1.12.1
-    restart: unless-stopped
-    volumes:
-      - qdrant_data:/qdrant/storage
-    networks:
-      - newsroom_internal
-
-  # 5. Local-First AI Model Gateway (LiteLLM + Ollama)
-  # Routes sensitive/unpublished leaks to local Ollama; approved public reports to Gemini
-  litellm:
-    image: ghcr.io/berriai/litellm:main-stable
+  # 3. Homebox — Cloned Open-Source Equipment Inventory & Lending (./external-apps/homebox)
+  homebox:
+    image: ghcr.io/sysadminsmedia/homebox:latest
+    ports:
+      - "3002:7745"
     restart: unless-stopped
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - OLLAMA_API_BASE=http://ollama:11434
+      - HBOX_LOG_LEVEL=info
+      - HBOX_LOG_FORMAT=text
+      - HBOX_WEB_MAX_UPLOAD_SIZE=25
+      - HBOX_OPTIONS_ALLOW_REGISTRATION=true
+    volumes:
+      - homebox_data:/data/
     networks:
-      - newsroom_internal
+      - newsroom_mesh
+
+  # 4. Paperless-ngx — Cloned Open-Source Tesseract OCR & Document Archive (./external-apps/paperless-ngx)
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_DBHOST=postgres
+      - PAPERLESS_DBNAME=paperless
+      - PAPERLESS_DBUSER=postgres
+      - PAPERLESS_DBPASS=newsroom_pass
+      - PAPERLESS_OCR_LANGUAGE=eng
+      - PAPERLESS_ADMIN_USER=editor
+      - PAPERLESS_ADMIN_PASSWORD=newsroom-admin
+      - PAPERLESS_URL=http://localhost:8000
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - paperless_data:/usr/src/paperless/data
+      - paperless_media:/usr/src/paperless/media
+      - paperless_consume:/usr/src/paperless/consume
+    networks:
+      - newsroom_mesh
+
+  # 5. Open-WebUI + Ollama — Open-Source RAG Workspace & Google Small LLMs (Gemma 3 4B)
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_NAME=Connected Newsroom AI (Google Gemma 3 + RAG)
+    depends_on:
+      - ollama
+    volumes:
+      - open_webui_data:/app/backend/data
+    networks:
+      - newsroom_mesh
 
   ollama:
     image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
     restart: unless-stopped
     volumes:
       - ollama_models:/root/.ollama
     networks:
-      - newsroom_internal
+      - newsroom_mesh
 
-  # 6. Private Object Storage for Evidence & Story Packages (SeaweedFS / MinIO S3-Compatible)
-  storage:
-    image: chrislusf/seaweedfs:latest
-    command: "server -s3 -dir=/data"
+  # 6. Shared Backing Services (PostgreSQL 16 + Redis)
+  postgres:
+    image: postgres:16-alpine
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: newsroom_pass
+      POSTGRES_DB: planka
     volumes:
-      - storage_data:/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - newsroom_internal
+      - newsroom_mesh
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - newsroom_mesh
 
 volumes:
-  caddy_data:
-  caddy_config:
   postgres_data:
-  qdrant_data:
+  planka_avatars:
+  planka_attachments:
+  homebox_data:
+  paperless_data:
+  paperless_media:
+  paperless_consume:
+  open_webui_data:
   ollama_models:
-  storage_data:
 
 networks:
-  public_ingress:
+  newsroom_mesh:
     driver: bridge
-  newsroom_internal:
-    driver: bridge
-    internal: true
