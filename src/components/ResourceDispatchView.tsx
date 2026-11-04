@@ -10,7 +10,6 @@ import {
   JournalistProfile,
 } from "@/types/newsroom";
 import GeographicMap from "./GeographicMap";
-import OpenSourceAppsBridge from "./OpenSourceAppsBridge";
 import {
   Radio,
   Camera,
@@ -242,9 +241,6 @@ export default function ResourceDispatchView({
 
   return (
     <div className="space-y-6">
-      {/* Linked Open-Source Equipment Engine (Homebox) */}
-      <OpenSourceAppsBridge filterModule="gear" />
-
       {/* Clean Page Header & Action Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { AuditLogEntry, Organisation, Investigation } from "@/types/newsroom";
-import OpenSourceAppsBridge from "./OpenSourceAppsBridge";
 import type { LoadTestReport } from "@/app/api/telemetry/load-test/route";
 import {
   Shield,
@@ -56,8 +55,6 @@ export default function SecurityAuditView({
 
   return (
     <div className="space-y-6">
-      <OpenSourceAppsBridge filterModule="all" compact={false} />
-
       {/* Platform Usage, Cost & 10-Organisation Load Test Dashboard */}
       <div className="rounded-2xl border border-slate-800 bg-[#0f172a] overflow-hidden shadow-lg">
         <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">

@@ -11,7 +11,6 @@ import {
 } from "@/types/newsroom";
 import KanbanBoard from "./KanbanBoard";
 import AICopilotView from "./AICopilotView";
-import OpenSourceAppsBridge from "./OpenSourceAppsBridge";
 import MediaVerificationWorkspace from "./MediaVerificationWorkspace";
 import {
   FolderGit2,
@@ -95,6 +94,9 @@ export default function InvestigationWorkspaceView({
   const [workflowStep, setWorkflowStep] = useState<
     "research" | "kanban" | "write_publish"
   >("research");
+  const [researchMode, setResearchMode] = useState<"documents" | "headline">(
+    "documents"
+  );
 
   const selectedInvestigation =
     investigations.find((i) => i.id === selectedInvestigationId) ||
@@ -149,11 +151,6 @@ export default function InvestigationWorkspaceView({
 
   return (
     <div className="space-y-6">
-      {/* Linked Open-Source Engines (Paperless-ngx OCR, Open-WebUI + Google Gemma 3, Planka Kanban) */}
-      <OpenSourceAppsBridge
-        filterModule={workflowStep === "kanban" ? "kanban" : "ai"}
-      />
-
       {/* Clean Page Header & Project Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
         <div>
@@ -334,36 +331,59 @@ export default function InvestigationWorkspaceView({
 
           {/* STEP 1: EVIDENCE & AI RESEARCH COPILOT */}
           {workflowStep === "research" && (
-            <div className="space-y-6">
-              <MediaVerificationWorkspace
-                onSendToStoryDraft={(verifiedBlock) => {
-                  insertCitationTag(verifiedBlock);
-                  setWorkflowStep("write_publish");
-                }}
-              />
-
-              <AICopilotView
-                documents={documents}
-                organisations={organisations}
-                activeOrgId={activeOrgId}
-                onDocumentIndexed={onDocumentIndexed}
-                onLogAIQuery={onLogAIQuery}
-                onLogHumanVerification={onLogHumanVerification}
-                onInsertCitationIntoDraft={(citationTag) => {
-                  insertCitationTag(citationTag);
-                  setWorkflowStep("write_publish");
-                }}
-              />
-
-              <div className="flex justify-end pt-2">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setResearchMode("documents")}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      researchMode === "documents"
+                        ? "bg-teal-500 text-slate-950"
+                        : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    1A. Shared Document Research & Citations
+                  </button>
+                  <button
+                    onClick={() => setResearchMode("headline")}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      researchMode === "headline"
+                        ? "bg-teal-500 text-slate-950"
+                        : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    1B. Verify Headline / Claim (Before & After)
+                  </button>
+                </div>
                 <button
                   onClick={() => setWorkflowStep("kanban")}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-semibold text-xs flex items-center gap-2 cursor-pointer"
+                  className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
-                  Continue to Step 2: Verification Kanban Board{" "}
-                  <ArrowRight className="w-4 h-4" />
+                  Next: Kanban Board <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
+
+              {researchMode === "documents" ? (
+                <AICopilotView
+                  documents={documents}
+                  organisations={organisations}
+                  activeOrgId={activeOrgId}
+                  onDocumentIndexed={onDocumentIndexed}
+                  onLogAIQuery={onLogAIQuery}
+                  onLogHumanVerification={onLogHumanVerification}
+                  onInsertCitationIntoDraft={(citationTag) => {
+                    insertCitationTag(citationTag);
+                    setWorkflowStep("write_publish");
+                  }}
+                />
+              ) : (
+                <MediaVerificationWorkspace
+                  onSendToStoryDraft={(verifiedBlock) => {
+                    insertCitationTag(verifiedBlock);
+                    setWorkflowStep("write_publish");
+                  }}
+                />
+              )}
             </div>
           )}
 
