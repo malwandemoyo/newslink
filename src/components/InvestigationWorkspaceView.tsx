@@ -12,6 +12,7 @@ import {
 import KanbanBoard from "./KanbanBoard";
 import AICopilotView from "./AICopilotView";
 import OpenSourceAppsBridge from "./OpenSourceAppsBridge";
+import MediaVerificationWorkspace from "./MediaVerificationWorkspace";
 import {
   FolderGit2,
   FileEdit,
@@ -333,7 +334,14 @@ export default function InvestigationWorkspaceView({
 
           {/* STEP 1: EVIDENCE & AI RESEARCH COPILOT */}
           {workflowStep === "research" && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <MediaVerificationWorkspace
+                onSendToStoryDraft={(verifiedBlock) => {
+                  insertCitationTag(verifiedBlock);
+                  setWorkflowStep("write_publish");
+                }}
+              />
+
               <AICopilotView
                 documents={documents}
                 organisations={organisations}
