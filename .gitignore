@@ -10,3 +10,8 @@ data/*.sqlite*
 external-apps/*
 !external-apps/README.md
 
+EVALUATION_ANSWERS.md
+HACKATHON_SUBMISSION_FORM.md
+presentation/
+screenshots/
+docs/PROJECT_HANDOVER.md
