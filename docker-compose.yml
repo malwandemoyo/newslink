@@ -49,6 +49,17 @@ services:
     networks:
       - newsroom_net
 
+  cloudflared-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cn-cloudflared-tunnel
+    restart: unless-stopped
+    network_mode: "host"
+    env_file:
+      - .env
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - newsroom-frontend
+
 volumes:
   newsroom_sqlite:
 
