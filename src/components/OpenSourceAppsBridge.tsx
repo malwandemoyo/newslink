@@ -67,7 +67,7 @@ export default function OpenSourceAppsBridge({
       </div>
 
       {embeddedApp && (
-        <div className="rounded-2xl border border-slate-800 bg-[#0b1120] overflow-hidden shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
           <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
             <span className="text-xs font-bold text-white">
               {embeddedApp.name}

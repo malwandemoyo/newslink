@@ -334,7 +334,7 @@ export default function GeographicMap({
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
       {/* Map Header Controls */}
       <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -344,13 +344,13 @@ export default function GeographicMap({
           <div>
             <h3 className="text-xs font-bold text-white flex items-center gap-2">
               Live Geospatial Network Map (Newsrooms, Gear, Specialists & Field Dispatch)
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
                 {process.env.NEXT_PUBLIC_MAPS_API_KEY
                   ? "Maps API Key: .env Active"
                   : "OpenStreetMap + Leaflet"}
               </span>
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               Click any <span className="text-amber-300 font-medium">📡 NEED</span> marker to bid, <span className="text-teal-300 font-medium">🎥 Gear</span> to book, or <span className="text-purple-300 font-medium">👤 Specialist</span> to invite
             </p>
           </div>
@@ -364,7 +364,7 @@ export default function GeographicMap({
               <button
                 key={styleId}
                 onClick={() => setMapStyle(styleId)}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
+                className={`px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
                   mapStyle === styleId
                     ? "bg-sky-500 text-slate-950 font-semibold"
                     : "text-slate-300 hover:bg-slate-800"
@@ -399,7 +399,7 @@ export default function GeographicMap({
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
         {/* Map Legend Overlay */}
-        <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-[11px] text-slate-300 flex flex-wrap items-center gap-4 shadow-xl pointer-events-none">
+        <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 flex flex-wrap items-center gap-4 shadow-xl pointer-events-none">
           <span className="flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 text-amber-400" />
             <span>📡 Field Broadcast Radius</span>

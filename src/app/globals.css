@@ -1,52 +1,170 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/*
+ * Connected Newsroom design tokens.
+ * The slate scale is remapped to a graphite "ink" palette so every existing
+ * slate-* utility across the app inherits the editorial look automatically.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-newsreader), "Iowan Old Style", "Palatino Linotype",
+    Georgia, serif;
+
+  --color-slate-50: #f6f7f7;
+  --color-slate-100: #eceeef;
+  --color-slate-200: #d6dadd;
+  --color-slate-300: #b4bac0;
+  --color-slate-400: #8b9298;
+  --color-slate-500: #636a70;
+  --color-slate-600: #43484d;
+  --color-slate-700: #2b2f33;
+  --color-slate-800: #1c1f22;
+  --color-slate-900: #0f1113;
+  --color-slate-950: #08090a;
+}
+
 :root {
-  --bg-primary: #0b1120;
-  --bg-secondary: #0f172a;
-  --bg-card: #131c31;
-  --border-subtle: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
+  --bg-primary: #08090a;
+  --bg-secondary: #0f1113;
+  --bg-card: #131619;
+  --border-subtle: #1c1f22;
+  --text-primary: #eceeef;
+  --text-secondary: #8b9298;
   --accent-teal: #14b8a6;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(1100px 420px at 12% -8%, rgb(20 184 166 / 0.08), transparent 60%),
+    radial-gradient(900px 360px at 100% 0%, rgb(245 158 11 / 0.045), transparent 60%);
+  background-attachment: fixed;
   color: var(--text-primary);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom dark styling for Leaflet map & popups */
+@layer base {
+  /* Front-page serif for primary headlines */
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  h3,
+  h4 {
+    letter-spacing: -0.006em;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color, box-shadow,
+      opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button:not(:disabled):active {
+    transform: translateY(0.5px);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(45 212 191 / 0.7);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  input,
+  select,
+  textarea {
+    color-scheme: dark;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #636a70;
+  }
+}
+
+/* Subtle top highlight on bordered cards for depth */
+.rounded-xl.border,
+.rounded-2xl.border,
+.rounded-3xl.border {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+}
+
+/* Leaflet map & popups */
 .leaflet-container {
-  background: #090f1d !important;
-  font-family: inherit;
+  background: #0f1113 !important;
+  font-family: var(--font-sans);
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background: #0f172a !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #334155;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.6) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px !important;
+  box-shadow: 0 18px 40px -10px rgb(0 0 0 / 0.55) !important;
 }
 
-/* Custom subtle scrollbars for editorial workspace */
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+}
+
+.leaflet-bar a {
+  background: #0f1113 !important;
+  color: #d6dadd !important;
+  border-color: #2b2f33 !important;
+}
+
+.leaflet-bar a:hover {
+  background: #1c1f22 !important;
+}
+
+.leaflet-control-attribution {
+  background: rgb(8 9 10 / 0.75) !important;
+  color: #8b9298 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #5eead4 !important;
+}
+
+/* Subtle scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b1120;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: #2b2f33;
+  border-radius: 999px;
+  border: 2px solid #08090a;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #43484d;
+}
+
+::selection {
+  background: rgb(20 184 166 / 0.3);
+  color: #ccfbf1;
 }

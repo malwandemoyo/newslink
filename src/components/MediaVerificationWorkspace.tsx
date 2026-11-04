@@ -65,11 +65,11 @@ export default function MediaVerificationWorkspace({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-[#0f172a] overflow-hidden shadow-xl space-y-5 p-5">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl space-y-5 p-5">
       {/* Header & 3-Screenshot Selector Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
             Media Verification Workspace • Misleading Headline vs. Official Audit
           </span>
           <h3 className="text-base font-bold text-white mt-1.5">
@@ -124,7 +124,7 @@ export default function MediaVerificationWorkspace({
                   <AlertTriangle className="w-4 h-4" />
                   Submitted Viral Headline Under Investigation
                 </span>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="text-xs font-mono text-slate-400">
                   Case ID: VER-2026-BYO-04
                 </span>
               </div>
@@ -167,7 +167,7 @@ export default function MediaVerificationWorkspace({
                 <button
                   onClick={runLiveGeminiHeadlineCheck}
                   disabled={verifying}
-                  className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow"
+                  className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow"
                 >
                   <Sparkles className="w-4 h-4" />
                   {verifying
@@ -257,7 +257,7 @@ export default function MediaVerificationWorkspace({
                   <Sparkles className="w-4 h-4" />
                   Gemini (gemini-3.8-flash) Grounded Evidence Analysis
                 </span>
-                <span className="font-mono text-[11px] text-slate-400">
+                <span className="font-mono text-xs text-slate-400">
                   Same Question: “Is Umzingwane water confirmed 100% safe?”
                 </span>
               </div>
@@ -319,7 +319,7 @@ export default function MediaVerificationWorkspace({
                 Indexed Source Provenance Metadata
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[11px]">
+                <table className="w-full text-left border-collapse text-xs">
                   <tbody className="divide-y divide-slate-800">
                     <tr>
                       <td className="py-1.5 text-slate-400 font-medium">Document #1</td>
@@ -451,7 +451,7 @@ export default function MediaVerificationWorkspace({
               Corrected Evidence-Backed Headline for Publication
             </div>
             <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-500/30">
-              <div className="text-[11px] text-rose-300 font-bold">
+              <div className="text-xs text-rose-300 font-bold">
                 Original Misleading Headline:
               </div>
               <p className="text-slate-300 line-through mt-0.5">
@@ -459,7 +459,7 @@ export default function MediaVerificationWorkspace({
               </p>
             </div>
             <div className="p-3 rounded-lg bg-emerald-950/25 border border-emerald-500/30">
-              <div className="text-[11px] text-emerald-300 font-bold">
+              <div className="text-xs text-emerald-300 font-bold">
                 Verified Collaborative Headline:
               </div>
               <p className="text-white font-bold mt-0.5">

@@ -354,37 +354,43 @@ export default function ConnectedNewsroomApp() {
     currentDraft?.approvals.every((a) => a.approved) ?? false;
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#0b1120] text-slate-100">
+    <div className="min-h-screen flex flex-col lg:flex-row text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 border border-teal-500 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900/95 backdrop-blur border border-slate-700 text-slate-100 pl-4 pr-5 py-3.5 rounded-xl shadow-2xl shadow-black/50 flex items-center gap-3">
+          <span className="w-7 h-7 rounded-full bg-teal-500/15 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-teal-400" />
+          </span>
           <span className="text-sm font-medium leading-snug">
             {toastMessage}
           </span>
         </div>
       )}
 
-      {/* Left Sidebar Navigation — Clean, Spacious, 6 Human-Friendly Items */}
-      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-[#0d1526] flex flex-col justify-between">
+      {/* Left Sidebar Navigation */}
+      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/70 backdrop-blur flex flex-col justify-between lg:sticky lg:top-0 lg:h-screen">
         <div>
           {/* Brand Logo */}
-          <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-950 font-black text-base shadow-md">
-              CN
+          <div className="px-5 py-6 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-slate-950 font-serif font-bold text-lg shadow-lg shadow-teal-500/20 ring-1 ring-white/10">
+              Cn
             </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-white leading-none">
+              <h1 className="text-lg text-slate-50 leading-none">
                 Connected Newsroom
               </h1>
-              <p className="text-xs text-teal-400 font-medium mt-1">
-                Stronger newsrooms.
+              <p className="text-xs text-slate-400 mt-1.5">
+                Stronger newsrooms. Better journalism.
               </p>
             </div>
           </div>
 
+          <p className="px-6 pt-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Workspace
+          </p>
+
           {/* Primary Navigation */}
-          <nav className="p-3.5 space-y-1.5">
+          <nav className="px-3 space-y-0.5">
             {(
               [
                 {
@@ -431,25 +437,28 @@ export default function ConnectedNewsroomApp() {
                 <button
                   key={item.id}
                   onClick={() => setActiveNav(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition cursor-pointer ${
+                  className={`relative w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition cursor-pointer ${
                     isActive
-                      ? "bg-teal-500 text-slate-950 font-bold shadow-md"
-                      : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
+                      ? "bg-teal-500/10 text-teal-100 font-semibold"
+                      : "text-slate-400 font-medium hover:bg-slate-800/60 hover:text-slate-100"
                   }`}
                 >
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-teal-400" />
+                  )}
                   <span className="flex items-center gap-3">
                     <Icon
                       className={`w-4 h-4 ${
-                        isActive ? "text-slate-950" : "text-teal-400"
+                        isActive ? "text-teal-300" : "text-slate-500"
                       }`}
                     />
                     {item.label}
                   </span>
                   {"count" in item && item.count && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                      className={`text-[11px] px-2 py-0.5 rounded-full font-semibold tabular-nums ${
                         isActive
-                          ? "bg-slate-950/20 text-slate-950"
+                          ? "bg-teal-400/15 text-teal-200"
                           : "bg-slate-800 text-slate-400"
                       }`}
                     >
@@ -463,20 +472,20 @@ export default function ConnectedNewsroomApp() {
         </div>
 
         {/* Sidebar Footer: Principle & Reset */}
-        <div className="p-4 border-t border-slate-800/80 space-y-3 bg-slate-950/30">
-          <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800/90 text-xs text-slate-300 space-y-1">
+        <div className="p-4 space-y-3">
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-1.5">
             <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
               <ShieldCheck className="w-4 h-4" />
               Journalists in Control
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               AI assists research and citations. Humans verify facts and approve publication.
             </p>
           </div>
 
           <button
             onClick={handleResetDatabase}
-            className="w-full py-2 px-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            className="w-full py-2 px-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 text-xs flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset Demo Data
@@ -487,11 +496,12 @@ export default function ConnectedNewsroomApp() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar: Active Newsroom Switcher + 4-Step Workflow Progress */}
-        <header className="border-b border-slate-800/80 bg-[#0f172a]/95 backdrop-blur px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-slate-400 mr-1">
-              Viewing as Newsroom:
+        <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/75 backdrop-blur-xl px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Viewing as
             </span>
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
             {organisations.map((org) => {
               const isCurrent = org.id === activeOrgId;
               return (
@@ -501,22 +511,23 @@ export default function ConnectedNewsroomApp() {
                     setActiveOrgId(org.id);
                     triggerToast(`Now viewing as ${org.name} (${org.city}).`);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                     isCurrent
-                      ? "bg-teal-500/20 text-teal-300 border-teal-500/50 shadow-sm"
-                      : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
+                      ? "bg-slate-700/70 text-slate-50 shadow-sm ring-1 ring-white/5"
+                      : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <Building2 className="w-3.5 h-3.5" />
+                  <Building2 className={`w-3.5 h-3.5 ${isCurrent ? "text-teal-300" : ""}`} />
                   {org.shortName}
-                  <span className="text-[11px] opacity-75">({org.city})</span>
+                  <span className="text-xs font-normal text-slate-500">{org.city}</span>
                 </button>
               );
             })}
+            </div>
           </div>
 
           {/* Interactive 4-Step Story Workflow Pills */}
-          <div className="hidden xl:flex items-center gap-2 text-xs">
+          <div className="hidden xl:flex items-center gap-1 text-xs">
             {(
               [
                 {
@@ -544,21 +555,33 @@ export default function ConnectedNewsroomApp() {
                   done: stories.length > 2,
                 },
               ] as const
-            ).map((st) => (
-              <button
-                key={st.num}
-                onClick={() => setActiveNav(st.nav)}
-                className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition cursor-pointer ${
-                  activeNav === st.nav
-                    ? "bg-teal-500 text-slate-950 border-teal-400 font-bold"
-                    : st.done
-                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                    : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
-                }`}
-              >
-                {st.done && <CheckCircle2 className="w-3.5 h-3.5" />}
-                {st.label}
-              </button>
+            ).map((st, i) => (
+              <React.Fragment key={st.num}>
+                {i > 0 && <span className="w-4 h-px bg-slate-700" />}
+                <button
+                  onClick={() => setActiveNav(st.nav)}
+                  className={`px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition cursor-pointer ${
+                    activeNav === st.nav
+                      ? "text-slate-50 font-semibold bg-slate-800"
+                      : st.done
+                      ? "text-emerald-300 hover:bg-slate-800/60"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      st.done
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : activeNav === st.nav
+                        ? "bg-teal-400 text-slate-950"
+                        : "bg-slate-800 text-slate-400 ring-1 ring-slate-700"
+                    }`}
+                  >
+                    {st.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : st.num}
+                  </span>
+                  {st.label.replace(/^\d\.\s/, "")}
+                </button>
+              </React.Fragment>
             ))}
           </div>
         </header>
@@ -569,25 +592,26 @@ export default function ConnectedNewsroomApp() {
           {activeNav === "overview" && (
             <div className="space-y-8">
               {/* Welcome & Active Story Hero Card */}
-              <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-[#13203a] via-[#0f172a] to-[#0d2229] p-6 lg:p-8 shadow-xl space-y-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  <div className="space-y-2 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-semibold">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Active Desk: {activeOrg.name} ({activeOrg.city})
+              <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-teal-950/40 via-slate-900 to-slate-900 p-6 lg:p-8 shadow-2xl shadow-black/30 space-y-6">
+                <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal-500/10 blur-3xl" />
+                <div className="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                  <div className="space-y-3 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950/60 border border-slate-700/70 text-slate-300 text-xs font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                      Active desk · {activeOrg.name}, {activeOrg.city}
                     </div>
-                    <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
-                      Umzingwane River Water & Lithium Tailings Investigation
+                    <h2 className="text-3xl lg:text-4xl text-slate-50 leading-tight">
+                      Umzingwane River Water &amp; Lithium Tailings Investigation
                     </h2>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      Co-reporting with <strong>CITE ZW</strong> and{" "}
-                      <strong>Harare Investigative Collective</strong>. Follow the 3 workflow cards below to borrow field gear, verify the public audit report, and publish to the News Wire.
+                    <p className="text-sm text-slate-400 leading-relaxed">
+                      Co-reporting with <strong className="text-slate-200 font-semibold">CITE ZW</strong> and{" "}
+                      <strong className="text-slate-200 font-semibold">Harare Investigative Collective</strong>. Follow the three steps below to borrow field gear, verify the public audit report, and publish to the News Wire.
                     </p>
                   </div>
 
                   <button
                     onClick={() => setActiveNav("investigations")}
-                    className="px-6 py-3.5 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-sm flex items-center gap-2.5 shadow-lg cursor-pointer shrink-0 transition"
+                    className="px-5 py-3 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-sm flex items-center gap-2 shadow-lg shadow-teal-500/20 cursor-pointer shrink-0 transition"
                   >
                     Open Investigation Workspace{" "}
                     <ArrowRight className="w-4 h-4" />
@@ -595,7 +619,7 @@ export default function ConnectedNewsroomApp() {
                 </div>
 
                 {/* 3 Clear Workflow Cards right inside the Hero */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                   {/* Step Card 1 */}
                   <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
                     <div className="space-y-2">
@@ -688,7 +712,7 @@ export default function ConnectedNewsroomApp() {
               />
 
               {/* AI RESOURCE & COLLABORATOR MATCHMAKER (Section 3 Module 5 of Original Prompt) */}
-              <div className="rounded-2xl border border-teal-500/30 bg-[#0f172a] p-6 space-y-4">
+              <div className="rounded-2xl border border-teal-500/30 bg-slate-900 p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
@@ -704,7 +728,7 @@ export default function ConnectedNewsroomApp() {
                   <button
                     onClick={runAiRecommendations}
                     disabled={loadingAiRecs}
-                    className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
+                    className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
                   >
                     <Sparkles className="w-4 h-4" />
                     {loadingAiRecs
@@ -792,7 +816,7 @@ export default function ConnectedNewsroomApp() {
               {/* Action Needed From Your Desk (Live Offers & Approvals) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: Live Field Dispatch Offers */}
-                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-bold text-white">
@@ -818,7 +842,7 @@ export default function ConnectedNewsroomApp() {
                             <KeyRound className="w-4 h-4 text-emerald-400" />
                             Crew Dispatched! Handover PIN:
                           </span>
-                          <span className="font-mono font-black text-sm px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
+                          <span className="font-mono font-semibold text-sm px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
                             {b.handoverPin}
                           </span>
                         </div>
@@ -871,7 +895,7 @@ export default function ConnectedNewsroomApp() {
                 </div>
 
                 {/* Right: Participating Newsrooms in the Network + Onboarding */}
-                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-base font-bold text-white">
@@ -885,7 +909,7 @@ export default function ConnectedNewsroomApp() {
                       onClick={() =>
                         setShowRegisterOrgModal(!showRegisterOrgModal)
                       }
-                      className="px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs cursor-pointer shrink-0"
+                      className="px-3 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs cursor-pointer shrink-0"
                     >
                       + Register Newsroom
                     </button>
@@ -975,7 +999,7 @@ export default function ConnectedNewsroomApp() {
               </div>
 
               {/* Money & Network Credits Movement Ledger (Escrow, Gear Rentals & Story Syndication Splits) */}
-              <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h3 className="text-base font-bold text-white">
@@ -1168,7 +1192,7 @@ export default function ConnectedNewsroomApp() {
                     return (
                       <div
                         key={exp.id}
-                        className="p-5 rounded-2xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-5 shadow-sm"
+                        className="p-5 rounded-2xl border border-slate-800 bg-slate-900 flex flex-col justify-between gap-5 shadow-sm"
                       >
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-2">
@@ -1228,7 +1252,7 @@ export default function ConnectedNewsroomApp() {
                           ) : (
                             <button
                               onClick={() => handleInviteExpert(exp)}
-                              className="w-full py-2.5 px-4 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
+                              className="w-full py-2.5 px-4 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                             >
                               Invite to Investigation →
                             </button>
@@ -1361,7 +1385,7 @@ export default function ConnectedNewsroomApp() {
                   return (
                     <div
                       key={story.id}
-                      className="p-6 rounded-2xl border border-slate-800 bg-[#0f172a] flex flex-col justify-between gap-5 shadow-sm"
+                      className="p-6 rounded-2xl border border-slate-800 bg-slate-900 flex flex-col justify-between gap-5 shadow-sm"
                     >
                       <div className="space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1425,7 +1449,7 @@ export default function ConnectedNewsroomApp() {
 
                         <button
                           onClick={() => handleRequestSyndication(story)}
-                          className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
+                          className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                         >
                           Republish in {activeOrg.shortName} (
                           {story.republishCount}) →
@@ -1439,7 +1463,7 @@ export default function ConnectedNewsroomApp() {
               {/* Full Story Reader Modal */}
               {readingStory && (
                 <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-                  <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-teal-500/50 bg-[#0f172a] p-6 flex flex-col justify-between gap-4 shadow-2xl">
+                  <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-teal-500/50 bg-slate-900 p-6 flex flex-col justify-between gap-4 shadow-2xl">
                     <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
                       <div>
                         <span className="text-xs font-semibold text-teal-400">

@@ -236,7 +236,7 @@ export default function InvestigationWorkspaceView({
           {onCreateInvestigation && (
             <button
               onClick={() => setShowNewInvModal(!showNewInvModal)}
-              className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow"
+              className="px-3.5 py-2 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow"
             >
               <Sparkles className="w-3.5 h-3.5" />+ New Investigation
             </button>
@@ -359,7 +359,7 @@ export default function InvestigationWorkspaceView({
                     Evidence & AI Copilot
                   </div>
                   <div
-                    className={`text-[11px] ${
+                    className={`text-xs ${
                       workflowStep === "research"
                         ? "text-slate-900"
                         : "text-slate-400"
@@ -395,7 +395,7 @@ export default function InvestigationWorkspaceView({
                     Verification Board (Kanban)
                   </div>
                   <div
-                    className={`text-[11px] ${
+                    className={`text-xs ${
                       workflowStep === "kanban"
                         ? "text-slate-900"
                         : "text-slate-400"
@@ -432,7 +432,7 @@ export default function InvestigationWorkspaceView({
                     Write, Sign Off & Publish
                   </div>
                   <div
-                    className={`text-[11px] ${
+                    className={`text-xs ${
                       workflowStep === "write_publish"
                         ? "text-slate-900"
                         : "text-slate-400"
@@ -513,7 +513,7 @@ export default function InvestigationWorkspaceView({
                   }}
                 />
               ) : (
-                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 space-y-4 text-xs">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-4 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                     <div>
                       <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -576,7 +576,7 @@ export default function InvestigationWorkspaceView({
                     <button
                       type="submit"
                       disabled={transcribing}
-                      className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold cursor-pointer shadow"
+                      className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold cursor-pointer shadow"
                     >
                       {transcribing
                         ? "Transcribing via Gemini 3.8 Flash..."
@@ -595,7 +595,7 @@ export default function InvestigationWorkspaceView({
                             {transcriptData.summary}
                           </p>
                         </div>
-                        <span className="font-mono text-[11px] text-emerald-300">
+                        <span className="font-mono text-xs text-emerald-300">
                           {transcriptData.modelUsed}
                         </span>
                       </div>
@@ -614,7 +614,7 @@ export default function InvestigationWorkspaceView({
                                 </span>
                               </span>
                               <span
-                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                   seg.classification === "Documented Evidence"
                                     ? "bg-emerald-500/15 text-emerald-300"
                                     : "bg-amber-500/15 text-amber-300"
@@ -675,7 +675,7 @@ export default function InvestigationWorkspaceView({
                       }
                     }}
                     disabled={generatingTasks}
-                    className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold flex items-center gap-1.5 cursor-pointer shadow"
+                    className="px-3.5 py-2 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     {generatingTasks
@@ -699,7 +699,7 @@ export default function InvestigationWorkspaceView({
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => setWorkflowStep("write_publish")}
-                  className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow"
+                  className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow"
                 >
                   Continue to Step 3: Write Story & Editorial Sign-Off{" "}
                   <ArrowRight className="w-4 h-4" />
@@ -713,7 +713,7 @@ export default function InvestigationWorkspaceView({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left 7 Columns: Clean Story Editor + Evidence Citation Picker */}
               <div className="lg:col-span-7 space-y-4">
-                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
                       <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -816,7 +816,7 @@ export default function InvestigationWorkspaceView({
 
               {/* Right 5 Columns: Pre-Publication Sign-Off Checklist & Publish Button */}
               <div className="lg:col-span-5 space-y-4">
-                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 space-y-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-5">
                   <div className="border-b border-slate-800 pb-3 flex items-start justify-between gap-2">
                     <div>
                       <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">
@@ -939,7 +939,7 @@ export default function InvestigationWorkspaceView({
                       onPublishToExchange(selectedInvestigation.id)
                     }
                     disabled={!allGatesApproved}
-                    className="w-full py-3 px-5 rounded-xl bg-teal-500 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xl transition"
+                    className="w-full py-3 px-5 rounded-xl bg-teal-500 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xl transition"
                   >
                     <Send className="w-4 h-4" />
                     {allGatesApproved

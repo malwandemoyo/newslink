@@ -56,7 +56,7 @@ export default function SecurityAuditView({
   return (
     <div className="space-y-6">
       {/* Platform Usage, Cost & 10-Organisation Load Test Dashboard */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0f172a] overflow-hidden shadow-lg">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-lg">
         <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Cpu className="w-5 h-5 text-teal-400" />
@@ -76,7 +76,7 @@ export default function SecurityAuditView({
             <button
               onClick={runLiveLoadTest}
               disabled={runningLoadTest}
-              className="px-3.5 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow"
+              className="px-3.5 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow"
             >
               <Play className="w-3.5 h-3.5" />
               {runningLoadTest
@@ -97,7 +97,7 @@ export default function SecurityAuditView({
             <div className="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
               <div className="bg-amber-400 h-full w-[64%]" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-2">
               Highest resource consumer: PDF/OCR parsing + Gemini API inference (~64% peak memory).
             </p>
           </div>
@@ -112,7 +112,7 @@ export default function SecurityAuditView({
             <div className="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
               <div className="bg-teal-400 h-full w-[22%]" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-2">
               Persisted in <code className="text-teal-300">data/connected_newsroom.sqlite</code> (WAL mode).
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function SecurityAuditView({
             <div className="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
               <div className="bg-emerald-400 h-full w-[28%]" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-2">
               Measured server process RSS and V8 heap utilisation.
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function SecurityAuditView({
             <div className="mt-2 w-full bg-slate-800 h-2 rounded-full overflow-hidden">
               <div className="bg-sky-400 h-full w-[18%]" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-2">
               OpenStreetMap free community tiles ($0.00).
             </p>
           </div>
@@ -161,7 +161,7 @@ export default function SecurityAuditView({
                     Measured 10-Organisation (50 Concurrent Requests) Stress Test Results
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-teal-300">
+                <span className="text-xs font-mono text-teal-300">
                   Executed at {loadReport.timestamp} • Total Wall Time: {loadReport.totalDurationMs} ms
                 </span>
               </div>
@@ -264,7 +264,7 @@ export default function SecurityAuditView({
       </div>
 
       {/* Multi-Organisation Access Matrix */}
-      <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-teal-400" />
@@ -272,7 +272,7 @@ export default function SecurityAuditView({
               Multi-Organisation Row-Level Security & Workspace Access Control Matrix
             </h2>
           </div>
-          <span className="text-[11px] font-mono text-teal-300">
+          <span className="text-xs font-mono text-teal-300">
             Active Context: {activeOrgId}
           </span>
         </div>
@@ -299,7 +299,7 @@ export default function SecurityAuditView({
                       <div className="font-mono font-bold text-teal-300">
                         {inv.codeName}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-xs text-slate-400">
                         {inv.title}
                       </div>
                     </td>
@@ -312,15 +312,15 @@ export default function SecurityAuditView({
                       return (
                         <td key={org.id} className="py-3 px-4">
                           {isLead ? (
-                            <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold inline-flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-semibold inline-flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" /> Owner / Admin
                             </span>
                           ) : isPartner ? (
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] inline-flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[11px] inline-flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" /> Co-Investigator
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] inline-flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[11px] inline-flex items-center gap-1">
                               <Lock className="w-3 h-3" /> Isolated (403)
                             </span>
                           )}
@@ -336,13 +336,13 @@ export default function SecurityAuditView({
       </div>
 
       {/* Append-Only SQLite Security & Verification Audit Log */}
-      <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
           <span className="text-xs font-bold text-slate-100 flex items-center gap-2">
             <Activity className="w-4 h-4 text-teal-400" />
             Immutable SQLite Audit Log ({auditLogs.length} Recorded Events)
           </span>
-          <span className="text-[11px] font-mono text-emerald-400">
+          <span className="text-xs font-mono text-emerald-400">
             Persisted in data/connected_newsroom.sqlite
           </span>
         </div>
@@ -362,24 +362,24 @@ export default function SecurityAuditView({
                 const org = organisations.find((o) => o.id === log.actorOrgId);
                 return (
                   <tr key={log.id} className="hover:bg-slate-900/40">
-                    <td className="py-2.5 px-4 font-mono text-[11px] text-slate-400">
+                    <td className="py-2.5 px-4 font-mono text-xs text-slate-400">
                       {log.timestamp}
                     </td>
                     <td className="py-2.5 px-4">
                       <span className="font-semibold text-slate-200">
                         {log.actorName}
                       </span>
-                      <span className="ml-1.5 text-[10px] text-teal-400">
+                      <span className="ml-1.5 text-[11px] text-teal-400">
                         ({org?.shortName || log.actorOrgId})
                       </span>
                     </td>
                     <td className="py-2.5 px-4">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-[10px]">
+                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px]">
                         {log.category}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-slate-300">{log.action}</td>
-                    <td className="py-2.5 px-4 font-mono text-[11px] text-slate-400">
+                    <td className="py-2.5 px-4 font-mono text-xs text-slate-400">
                       {log.resourceTarget}
                     </td>
                   </tr>

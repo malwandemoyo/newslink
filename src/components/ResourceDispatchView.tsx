@@ -280,7 +280,7 @@ export default function ResourceDispatchView({
 
           <button
             onClick={() => setShowListGearModal(!showListGearModal)}
-            className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
+            className="px-4 py-2 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
           >
             <Camera className="w-4 h-4" />+ List Camera / Gear (AI Priced)
           </button>
@@ -521,7 +521,7 @@ export default function ResourceDispatchView({
                 return (
                   <div
                     key={res.id}
-                    className="p-5 rounded-2xl border border-slate-800/90 bg-[#0f172a] hover:border-slate-700 transition flex flex-col justify-between gap-5 shadow-sm"
+                    className="p-5 rounded-2xl border border-slate-800/90 bg-slate-900 hover:border-slate-700 transition flex flex-col justify-between gap-5 shadow-sm"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
@@ -589,7 +589,7 @@ export default function ResourceDispatchView({
                             setBookingResource(res);
                             setReqRate(res.suggestedRateUsd);
                           }}
-                          className="w-full py-2.5 px-4 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
+                          className="w-full py-2.5 px-4 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                         >
                           Request Equipment Booking →
                         </button>
@@ -621,7 +621,7 @@ export default function ResourceDispatchView({
             return (
               <div
                 key={b.id}
-                className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 flex flex-col justify-between gap-5 shadow-sm"
+                className="rounded-2xl border border-slate-800 bg-slate-900 p-5 flex flex-col justify-between gap-5 shadow-sm"
               >
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -671,7 +671,7 @@ export default function ResourceDispatchView({
                         <KeyRound className="w-4 h-4 text-emerald-400" />
                         Matched! Show Handover PIN at Pickup:
                       </span>
-                      <span className="font-mono font-black text-base px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
+                      <span className="font-mono font-semibold text-base px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
                         {b.handoverPin}
                       </span>
                     </div>
@@ -782,7 +782,7 @@ export default function ResourceDispatchView({
             return (
               <div
                 key={req.id}
-                className="p-5 rounded-2xl border border-slate-800 bg-[#0f172a] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
+                className="p-5 rounded-2xl border border-slate-800 bg-slate-900 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
               >
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -908,7 +908,7 @@ export default function ResourceDispatchView({
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleBroadcastSubmit}
-            className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-[#0f172a] p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-slate-900 p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
@@ -1047,7 +1047,7 @@ export default function ResourceDispatchView({
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleBidSubmit}
-            className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-[#0f172a] p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-slate-900 p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
@@ -1145,7 +1145,7 @@ export default function ResourceDispatchView({
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleDirectBookingSubmit}
-            className="w-full max-w-lg rounded-2xl border border-teal-500/50 bg-[#0f172a] p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl border border-teal-500/50 bg-slate-900 p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
@@ -1242,7 +1242,7 @@ export default function ResourceDispatchView({
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCounterRequestSubmit}
-            className="w-full max-w-md rounded-2xl border border-amber-500/50 bg-[#0f172a] p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-amber-500/50 bg-slate-900 p-6 space-y-4 shadow-2xl"
           >
             <h3 className="text-base font-bold text-white">
               Propose Counter-Terms
@@ -1297,7 +1297,7 @@ export default function ResourceDispatchView({
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleHandoverComplete}
-            className="w-full max-w-md rounded-2xl border border-emerald-500/50 bg-[#0f172a] p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-emerald-500/50 bg-slate-900 p-6 space-y-4 shadow-2xl"
           >
             <div className="border-b border-slate-800 pb-3">
               <span className="text-xs font-semibold text-emerald-400">

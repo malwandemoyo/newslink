@@ -162,7 +162,7 @@ export default function KanbanBoard({
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+          className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           New Investigation Task
@@ -176,7 +176,7 @@ export default function KanbanBoard({
           className="p-4 rounded-xl border border-teal-500/40 bg-slate-900/95 grid grid-cols-1 md:grid-cols-4 gap-3"
         >
           <div className="md:col-span-2">
-            <label className="block text-[11px] text-slate-400 mb-1">
+            <label className="block text-xs text-slate-400 mb-1">
               Task Title (Verification / Fieldwork / Legal Step)
             </label>
             <input
@@ -189,7 +189,7 @@ export default function KanbanBoard({
             />
           </div>
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">
+            <label className="block text-xs text-slate-400 mb-1">
               Assigned Collaborator
             </label>
             <select
@@ -206,7 +206,7 @@ export default function KanbanBoard({
             </select>
           </div>
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">
+            <label className="block text-xs text-slate-400 mb-1">
               Primary Source Citation Link
             </label>
             <div className="flex gap-2">
@@ -257,7 +257,7 @@ export default function KanbanBoard({
               className={`rounded-xl border transition-all flex flex-col min-h-[400px] ${
                 isDropTarget
                   ? "border-teal-400 bg-teal-950/20 ring-2 ring-teal-500/30"
-                  : "border-slate-800 bg-[#0f172a]"
+                  : "border-slate-800 bg-slate-900"
               }`}
             >
               {/* Column Header */}
@@ -267,12 +267,12 @@ export default function KanbanBoard({
                     {col.label}
                   </span>
                   <span
-                    className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${col.badge}`}
+                    className={`text-xs font-mono px-2 py-0.5 rounded-full border ${col.badge}`}
                   >
                     {colTasks.length}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                <p className="text-xs text-slate-400 mt-0.5 leading-tight">
                   {col.subtitle}
                 </p>
               </div>
@@ -304,7 +304,7 @@ export default function KanbanBoard({
                         );
                         setEvidenceRefInput(task.evidenceRef || "");
                       }}
-                      className={`p-3 rounded-lg border bg-[#131d33] hover:border-teal-500/50 transition flex flex-col justify-between gap-2.5 shadow-sm cursor-grab active:cursor-grabbing ${
+                      className={`p-3 rounded-lg border bg-slate-900 hover:border-teal-500/50 transition flex flex-col justify-between gap-2.5 shadow-sm cursor-grab active:cursor-grabbing ${
                         draggedTaskId === task.id
                           ? "opacity-40 border-teal-400"
                           : "border-slate-800"
@@ -313,7 +313,7 @@ export default function KanbanBoard({
                       <div>
                         <div className="flex items-center justify-between gap-1.5 mb-1.5">
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex items-center gap-1 ${
+                            className={`text-[11px] px-1.5 py-0.5 rounded border font-medium flex items-center gap-1 ${
                               org?.badgeColor || "bg-slate-800 text-slate-300"
                             }`}
                           >
@@ -321,7 +321,7 @@ export default function KanbanBoard({
                             {org?.shortName || "Partner"}
                           </span>
                           {task.evidenceRef && (
-                            <span className="text-[10px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <span className="text-[11px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
                               <FileCheck2 className="w-2.5 h-2.5" />
                               {task.evidenceRef}
                             </span>
@@ -331,13 +331,13 @@ export default function KanbanBoard({
                         <h4 className="text-xs font-semibold text-slate-100 leading-snug">
                           {task.title}
                         </h4>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                           {task.description}
                         </p>
 
                         {task.rightOfReplyStatus &&
                           task.rightOfReplyStatus !== "Not Required" && (
-                            <div className="mt-2 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                            <div className="mt-2 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
                               <Scale className="w-2.5 h-2.5" />
                               Right-of-Reply: {task.rightOfReplyStatus}
                             </div>
@@ -348,25 +348,25 @@ export default function KanbanBoard({
                         className="pt-2 border-t border-slate-800/80 space-y-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-between text-[11px]">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-300 font-medium flex items-center gap-1.5">
                             {task.assigneeName}
                             {commentCount > 0 && (
-                              <span className="text-[10px] text-teal-300 flex items-center gap-0.5">
+                              <span className="text-[11px] text-teal-300 flex items-center gap-0.5">
                                 <MessageSquare className="w-3 h-3" />
                                 {commentCount}
                               </span>
                             )}
                           </span>
                           {task.signedOffBy ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
                               <ShieldCheck className="w-3 h-3" />
                               Verified
                             </span>
                           ) : (
                             <button
                               onClick={() => onSignOffTask(task.id)}
-                              className="inline-flex items-center gap-1 text-[10px] text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded transition cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded transition cursor-pointer"
                             >
                               <UserCheck className="w-3 h-3" />
                               Sign Off Check
@@ -375,7 +375,7 @@ export default function KanbanBoard({
                         </div>
 
                         {task.signedOffBy && (
-                          <div className="text-[10px] text-emerald-400/90 bg-slate-950/60 px-2 py-1 rounded border border-emerald-500/20">
+                          <div className="text-[11px] text-emerald-400/90 bg-slate-950/60 px-2 py-1 rounded border border-emerald-500/20">
                             ✓ {task.signedOffBy}
                           </div>
                         )}
@@ -387,13 +387,13 @@ export default function KanbanBoard({
                             onClick={() =>
                               onMoveTask(task.id, columnOrder[colIdx - 1])
                             }
-                            className="p-1 rounded bg-slate-800/90 hover:bg-slate-700 disabled:opacity-30 text-slate-300 text-[10px] flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
+                            className="p-1 rounded bg-slate-800/90 hover:bg-slate-700 disabled:opacity-30 text-slate-300 text-[11px] flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowLeft className="w-3 h-3" /> Prev
                           </button>
                           <button
                             onClick={() => setSelectedTaskId(task.id)}
-                            className="text-[10px] text-slate-400 hover:text-teal-300 underline cursor-pointer"
+                            className="text-[11px] text-slate-400 hover:text-teal-300 underline cursor-pointer"
                           >
                             Open Notes ({commentCount})
                           </button>
@@ -402,7 +402,7 @@ export default function KanbanBoard({
                             onClick={() =>
                               onMoveTask(task.id, columnOrder[colIdx + 1])
                             }
-                            className="px-2 py-1 rounded bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 disabled:opacity-30 text-teal-300 text-[10px] font-medium flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
+                            className="px-2 py-1 rounded bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 disabled:opacity-30 text-teal-300 text-[11px] font-medium flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
                           >
                             Next <ArrowRight className="w-3 h-3" />
                           </button>
@@ -420,10 +420,10 @@ export default function KanbanBoard({
       {/* Task Detail, Right-of-Reply & Cross-Newsroom Comment Modal */}
       {selectedTask && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-teal-500/50 bg-[#0f172a] p-5 space-y-4 shadow-2xl">
+          <div className="w-full max-w-xl rounded-2xl border border-teal-500/50 bg-slate-900 p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-mono uppercase text-teal-400">
+                <span className="text-[11px] font-mono uppercase text-teal-400">
                   Investigation Task & Right-of-Reply Log • Assignee:{" "}
                   {selectedTask.assigneeName}
                 </span>
@@ -459,7 +459,7 @@ export default function KanbanBoard({
                   key={c.id}
                   className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs space-y-1"
                 >
-                  <div className="flex items-center justify-between text-[11px] text-teal-300">
+                  <div className="flex items-center justify-between text-xs text-teal-300">
                     <strong>
                       {c.authorName} ({c.authorOrgId})
                     </strong>

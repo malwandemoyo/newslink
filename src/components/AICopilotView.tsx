@@ -210,7 +210,7 @@ export default function AICopilotView({
   return (
     <div className="space-y-5">
       {/* Clean Header & Upload Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0f172a] border border-slate-800 rounded-2xl p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30">
             <Sparkles className="w-5 h-5" />
@@ -238,7 +238,7 @@ export default function AICopilotView({
           />
           <button
             onClick={() => setShowUploadModal(!showUploadModal)}
-            className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
+            className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
           >
             <Upload className="w-4 h-4" />
             Upload Document
@@ -374,8 +374,8 @@ export default function AICopilotView({
               }}
               className={`text-left p-4 rounded-2xl border transition flex flex-col justify-between gap-3 cursor-pointer ${
                 isSelected
-                  ? "bg-[#15223b] border-teal-500 shadow-lg"
-                  : "bg-[#0f172a] border-slate-800 hover:border-slate-700"
+                  ? "bg-slate-900 border-teal-500 shadow-lg"
+                  : "bg-slate-900 border-slate-800 hover:border-slate-700"
               }`}
             >
               <div className="space-y-2">
@@ -385,11 +385,11 @@ export default function AICopilotView({
                     {doc.documentType}
                   </span>
                   {isAllowed ? (
-                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-semibold">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-semibold">
                       Shared
                     </span>
                   ) : (
-                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 font-semibold flex items-center gap-1">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 font-semibold flex items-center gap-1">
                       <Lock className="w-3 h-3" /> Private to {ownerOrg?.shortName}
                     </span>
                   )}
@@ -425,7 +425,7 @@ export default function AICopilotView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left 7 Columns */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="p-5 rounded-2xl border border-slate-800 bg-[#0f172a] space-y-3.5">
+          <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900 space-y-3.5">
             <label className="block text-sm font-bold text-white">
               Ask a question about “{selectedDoc.title}”
             </label>
@@ -441,7 +441,7 @@ export default function AICopilotView({
               <button
                 onClick={() => runResearchQuery()}
                 disabled={loading}
-                className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 shrink-0 cursor-pointer shadow"
+                className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 shrink-0 cursor-pointer shadow"
               >
                 <Search className="w-4 h-4" />
                 {loading ? "Searching..." : "Ask Copilot"}
@@ -474,7 +474,7 @@ export default function AICopilotView({
           </div>
 
           {aiResult && hasAccessToSelected && (
-            <div className="p-5 rounded-2xl border border-slate-800 bg-[#111a2e] space-y-4">
+            <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-teal-400" />
@@ -520,7 +520,7 @@ export default function AICopilotView({
         </div>
 
         {/* Right 5 Columns: Original Source Pages */}
-        <div className="lg:col-span-5 flex flex-col rounded-2xl border border-slate-800 bg-[#0f172a] overflow-hidden">
+        <div className="lg:col-span-5 flex flex-col rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <BookOpen className="w-4 h-4 text-teal-400" />
@@ -567,7 +567,7 @@ export default function AICopilotView({
                         Page {pas.pageNumber} • {pas.sectionTitle}
                       </span>
                       <span
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
                           pas.classification === "Documented Evidence"
                             ? "bg-emerald-500/15 text-emerald-300"
                             : "bg-amber-500/15 text-amber-300"
@@ -590,7 +590,7 @@ export default function AICopilotView({
                               `${pas.quote} [Citation: ${selectedDoc.title}, p. ${pas.pageNumber}]`
                             );
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
+                          className="px-3 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
                         >
                           <Quote className="w-3.5 h-3.5" />+ Add Quote & Cite in Story
                         </button>
