@@ -109,6 +109,27 @@ export default function ConnectedNewsroomApp() {
   const [languageFilter, setLanguageFilter] = useState<string>("All");
   const [readingStory, setReadingStory] = useState<StoryPackage | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [ledgerTransactions, setLedgerTransactions] = useState<
+    Array<{
+      id: string;
+      from_org_id: string | null;
+      to_org_id: string | null;
+      category: string;
+      description: string;
+      gross_amount_usd: number;
+      platform_fee_usd: number;
+      net_payout_usd: number;
+      credits_moved: number;
+      payment_rail: string;
+      status: string;
+      created_at: string;
+    }>
+  >([]);
+  const [showRegisterOrgModal, setShowRegisterOrgModal] = useState(false);
+  const [newOrgName, setNewOrgName] = useState(
+    "Masvingo Mirror Community Radio"
+  );
+  const [newOrgCity, setNewOrgCity] = useState("Bulawayo");
 
   const activeOrg =
     organisations.find((o) => o.id === activeOrgId) || organisations[0];
@@ -145,6 +166,8 @@ export default function ConnectedNewsroomApp() {
       setStories(data.stories as StoryPackage[]);
     if (Array.isArray(data.syndicationRequests))
       setSyndicationRequests(data.syndicationRequests as SyndicationRequest[]);
+    if (Array.isArray(data.ledgerTransactions))
+      setLedgerTransactions(data.ledgerTransactions as typeof ledgerTransactions);
     if (Array.isArray(data.auditLogs))
       setAuditLogs(data.auditLogs as AuditLogEntry[]);
   }, []);
@@ -691,16 +714,74 @@ export default function ConnectedNewsroomApp() {
                   ))}
                 </div>
 
-                {/* Right: Participating Newsrooms in the Network */}
+                {/* Right: Participating Newsrooms in the Network + Onboarding */}
                 <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      Participating Independent Newsrooms
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Click any newsroom to test the platform from their perspective
-                    </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-white">
+                        Participating Independent Newsrooms ({organisations.length})
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Switch newsrooms or onboard a new partner organisation
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setShowRegisterOrgModal(!showRegisterOrgModal)
+                      }
+                      className="px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs cursor-pointer shrink-0"
+                    >
+                      + Register Newsroom
+                    </button>
                   </div>
+
+                  {showRegisterOrgModal && (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!newOrgName.trim()) return;
+                        await mutateServerState(
+                          "register_organisation",
+                          {
+                            name: newOrgName.trim(),
+                            shortName: newOrgName.trim().slice(0, 16),
+                            city: newOrgCity,
+                          },
+                          `Registered ${newOrgName} with $300 Escrow + 120 Credits!`
+                        );
+                        setShowRegisterOrgModal(false);
+                      }}
+                      className="p-3.5 rounded-xl bg-slate-950 border border-teal-500/40 space-y-2.5 text-xs"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={newOrgName}
+                          onChange={(e) => setNewOrgName(e.target.value)}
+                          placeholder="Newsroom Name..."
+                          className="sm:col-span-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"
+                        />
+                        <select
+                          value={newOrgCity}
+                          onChange={(e) => setNewOrgCity(e.target.value)}
+                          className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"
+                        >
+                          <option value="Bulawayo">Bulawayo</option>
+                          <option value="Harare">Harare</option>
+                          <option value="Mutare">Mutare</option>
+                          <option value="Gweru">Gweru</option>
+                        </select>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          className="px-3.5 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold cursor-pointer"
+                        >
+                          Onboard & Activate Wallet ($300 + 120 Credits)
+                        </button>
+                      </div>
+                    </form>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {organisations.map((org) => {
@@ -734,6 +815,66 @@ export default function ConnectedNewsroomApp() {
                       );
                     })}
                   </div>
+                </div>
+              </div>
+
+              {/* Money & Network Credits Movement Ledger (Escrow, Gear Rentals & Story Syndication Splits) */}
+              <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Escrow Wallet & Network Credit Settlement Ledger
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Tracks how money (USD via Paynow / EcoCash with 95% Lender / 5% Platform fee) and Reciprocal Network Credits move across newsrooms
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-bold text-emerald-300">
+                    Dual-Rail: USD Escrow (5% Fee) + Reciprocal Credits (0% Fee)
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2 px-3">Category</th>
+                        <th className="py-2 px-3">Settlement Details</th>
+                        <th className="py-2 px-3">Gross USD</th>
+                        <th className="py-2 px-3">Platform Fee (5%)</th>
+                        <th className="py-2 px-3">Net to Newsroom</th>
+                        <th className="py-2 px-3">Network Credits</th>
+                        <th className="py-2 px-3">Payment Rail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/70">
+                      {ledgerTransactions.slice(0, 6).map((tx) => (
+                        <tr key={tx.id}>
+                          <td className="py-2.5 px-3 font-semibold text-teal-300">
+                            {tx.category}
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-200">
+                            {tx.description}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-white">
+                            ${Number(tx.gross_amount_usd).toFixed(2)}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-amber-300">
+                            ${Number(tx.platform_fee_usd).toFixed(2)}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-emerald-300 font-bold">
+                            ${Number(tx.net_payout_usd).toFixed(2)}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-sky-300">
+                            {tx.credits_moved > 0 ? `+${tx.credits_moved} cr` : "—"}
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-400">
+                            {tx.payment_rail}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -789,7 +930,14 @@ export default function ConnectedNewsroomApp() {
                 await mutateServerState(
                   "accept_dispatch_bid",
                   payload,
-                  "Offer accepted & Handover PIN generated!"
+                  "Offer accepted, Escrow locked & Handover PIN generated!"
+                );
+              }}
+              onCreateResource={async (payload) => {
+                await mutateServerState(
+                  "create_resource",
+                  payload,
+                  `Equipment '${payload.title}' priced via Gemini AI & listed!`
                 );
               }}
               onSwitchOrg={(orgId) => {
@@ -1006,6 +1154,20 @@ export default function ConnectedNewsroomApp() {
                     resourceTarget: docTitle,
                   },
                   `Page ${pageNum} marked as verified.`
+                );
+              }}
+              onCreateInvestigation={async (payload) => {
+                await mutateServerState(
+                  "create_investigation",
+                  payload,
+                  `Created ${payload.codeName} & generated Gemini AI Kanban tasks!`
+                );
+              }}
+              onAiGenerateTasks={async (invId) => {
+                await mutateServerState(
+                  "ai_generate_kanban_tasks",
+                  { investigationId: invId },
+                  "Generated new verification tasks on Kanban board via Gemini 3.8 Flash!"
                 );
               }}
             />

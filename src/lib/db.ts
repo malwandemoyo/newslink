@@ -44,6 +44,11 @@ function getDb(): DatabaseSync {
   const db = new DatabaseSync(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL;");
 
+  const schemaPath = path.join(process.cwd(), "database", "schema.sql");
+  if (fs.existsSync(schemaPath)) {
+    db.exec(fs.readFileSync(schemaPath, "utf-8"));
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS kv_collections (
       collection_key TEXT PRIMARY KEY,
@@ -85,6 +90,8 @@ function seedDatabaseInternal(db: DatabaseSync) {
       updated_at = excluded.updated_at
   `);
 
+  upsert.run("organisations", JSON.stringify(INITIAL_ORGANISATIONS), now);
+  upsert.run("investigations", JSON.stringify(INITIAL_INVESTIGATIONS), now);
   upsert.run("resources", JSON.stringify(INITIAL_RESOURCES), now);
   upsert.run("resource_requests", JSON.stringify(INITIAL_RESOURCE_REQUESTS), now);
   upsert.run("dispatch_broadcasts", JSON.stringify(INITIAL_DISPATCH_BROADCASTS), now);
@@ -164,11 +171,106 @@ export function getAuditLogs(): AuditLogEntry[] {
   return stmt.all() as unknown as AuditLogEntry[];
 }
 
+export interface LedgerTransactionRow {
+  id: string;
+  from_org_id: string | null;
+  to_org_id: string | null;
+  category: string;
+  description: string;
+  gross_amount_usd: number;
+  platform_fee_usd: number;
+  net_payout_usd: number;
+  credits_moved: number;
+  payment_rail: string;
+  status: string;
+  reference_id: string;
+  created_at: string;
+}
+
+export function recordLedgerTransaction(tx: {
+  fromOrgId?: string | null;
+  toOrgId?: string | null;
+  category: string;
+  description: string;
+  grossAmountUsd: number;
+  creditsMoved?: number;
+  paymentRail?: string;
+  referenceId: string;
+}): void {
+  const db = getDb();
+  const gross = Number(tx.grossAmountUsd) || 0;
+  const fee = Number((gross * 0.05).toFixed(2));
+  const net = Number((gross - fee).toFixed(2));
+  const credits = Number(tx.creditsMoved) || 0;
+
+  db.prepare(`
+    INSERT INTO ledger_transactions (
+      id, from_org_id, to_org_id, category, description,
+      gross_amount_usd, platform_fee_usd, net_payout_usd,
+      credits_moved, payment_rail, status, reference_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Settled', ?)
+  `).run(
+    `tx-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`,
+    tx.fromOrgId || null,
+    tx.toOrgId || null,
+    tx.category,
+    tx.description,
+    gross,
+    fee,
+    net,
+    credits,
+    tx.paymentRail || "USD Escrow (EcoCash / Paynow)",
+    tx.referenceId
+  );
+}
+
+export function getLedgerTransactions(): LedgerTransactionRow[] {
+  const db = getDb();
+  const countRow = db
+    .prepare("SELECT COUNT(*) as c FROM ledger_transactions")
+    .get() as { c: number } | undefined;
+
+  if (!countRow || countRow.c === 0) {
+    recordLedgerTransaction({
+      fromOrgId: "org-byo",
+      toOrgId: "org-cite",
+      category: "inDrive Gear Escrow",
+      description: "DJI Mavic 3 Enterprise Drone + Operator (Umzingwane Survey)",
+      grossAmountUsd: 65,
+      paymentRail: "USD Escrow (Paynow / EcoCash)",
+      referenceId: "req-1",
+    });
+    recordLedgerTransaction({
+      fromOrgId: "org-hre",
+      toOrgId: "org-byo",
+      category: "Network Credit Barter",
+      description: "Reciprocal company registry forensic audit for Bulawayo field verification",
+      grossAmountUsd: 0,
+      creditsMoved: 45,
+      paymentRail: "Reciprocal Network Credits (0% Fee)",
+      referenceId: "inv-umzingwane",
+    });
+    recordLedgerTransaction({
+      fromOrgId: "org-mut",
+      toOrgId: "org-byo",
+      category: "Story Syndication Split",
+      description: "Commercial republication license split (60% Lead / 35% Partner / 5% Platform)",
+      grossAmountUsd: 120,
+      paymentRail: "USD Wire / Paynow Split",
+      referenceId: "story-1",
+    });
+  }
+
+  return db
+    .prepare("SELECT * FROM ledger_transactions ORDER BY rowid DESC LIMIT 50")
+    .all() as unknown as LedgerTransactionRow[];
+}
+
 export function getFullWorkspaceState() {
   return {
-    organisations: INITIAL_ORGANISATIONS,
+    organisations: getCollection("organisations", INITIAL_ORGANISATIONS),
     experts: INITIAL_EXPERTS,
-    investigations: INITIAL_INVESTIGATIONS,
+    investigations: getCollection("investigations", INITIAL_INVESTIGATIONS),
     resources: getCollection<Resource[]>("resources", INITIAL_RESOURCES),
     resourceRequests: getCollection<ResourceRequest[]>(
       "resource_requests",
@@ -196,6 +298,7 @@ export function getFullWorkspaceState() {
       "syndication_requests",
       INITIAL_SYNDICATION_REQUESTS
     ),
+    ledgerTransactions: getLedgerTransactions(),
     auditLogs: getAuditLogs(),
   };
 }

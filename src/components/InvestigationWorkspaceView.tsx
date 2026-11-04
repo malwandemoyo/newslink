@@ -68,6 +68,13 @@ interface InvestigationWorkspaceViewProps {
   ) => void;
   onLogAIQuery: (docTitle: string, mode: string, query: string) => void;
   onLogHumanVerification: (docTitle: string, pageNumber: number) => void;
+  onCreateInvestigation?: (payload: {
+    codeName: string;
+    title: string;
+    summary: string;
+    partnerOrgIds: string[];
+  }) => Promise<void>;
+  onAiGenerateTasks?: (investigationId: string) => Promise<void>;
 }
 
 export default function InvestigationWorkspaceView({
@@ -90,6 +97,8 @@ export default function InvestigationWorkspaceView({
   onDocumentIndexed,
   onLogAIQuery,
   onLogHumanVerification,
+  onCreateInvestigation,
+  onAiGenerateTasks,
 }: InvestigationWorkspaceViewProps) {
   const [workflowStep, setWorkflowStep] = useState<
     "research" | "kanban" | "write_publish"
@@ -97,6 +106,17 @@ export default function InvestigationWorkspaceView({
   const [researchMode, setResearchMode] = useState<"documents" | "headline">(
     "documents"
   );
+  const [showNewInvModal, setShowNewInvModal] = useState(false);
+  const [newInvCode, setNewInvCode] = useState("PROJECT ZAMBEZI");
+  const [newInvTitle, setNewInvTitle] = useState(
+    "Cross-Border Solar Mini-Grid Procurement Audit"
+  );
+  const [newInvSummary, setNewInvSummary] = useState(
+    "Joint investigation into rural electrification tender awards and battery delivery logs."
+  );
+  const [creatingInv, setCreatingInv] = useState(false);
+  const [generatingTasks, setGeneratingTasks] = useState(false);
+  const [prReviewNote, setPrReviewNote] = useState<string | null>(null);
 
   const selectedInvestigation =
     investigations.find((i) => i.id === selectedInvestigationId) ||
@@ -167,8 +187,8 @@ export default function InvestigationWorkspaceView({
           </h1>
         </div>
 
-        {/* Project Switcher Pills */}
-        <div className="flex items-center gap-2">
+        {/* Project Switcher Pills + New Shared Investigation Button */}
+        <div className="flex flex-wrap items-center gap-2">
           {investigations.map((inv) => {
             const isSelected = inv.id === selectedInvestigationId;
             const isAuth =
@@ -193,8 +213,87 @@ export default function InvestigationWorkspaceView({
               </button>
             );
           })}
+          {onCreateInvestigation && (
+            <button
+              onClick={() => setShowNewInvModal(!showNewInvModal)}
+              className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow"
+            >
+              <Sparkles className="w-3.5 h-3.5" />+ New Investigation
+            </button>
+          )}
         </div>
       </div>
+
+      {showNewInvModal && onCreateInvestigation && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!newInvTitle.trim()) return;
+            setCreatingInv(true);
+            try {
+              await onCreateInvestigation({
+                codeName: newInvCode.trim() || "PROJECT ZAMBEZI",
+                title: newInvTitle.trim(),
+                summary: newInvSummary.trim(),
+                partnerOrgIds: organisations
+                  .map((o) => o.id)
+                  .filter((id) => id !== activeOrgId),
+              });
+              setShowNewInvModal(false);
+            } finally {
+              setCreatingInv(false);
+            }
+          }}
+          className="p-4 rounded-2xl border border-teal-500/40 bg-slate-900/95 space-y-3 text-xs shadow-xl"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white flex items-center gap-2">
+              <FolderGit2 className="w-4 h-4 text-teal-400" />
+              Create Shared Investigation Repository (Gemini 3.8 Flash Seeds Initial Kanban Tasks)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowNewInvModal(false)}
+              className="text-slate-400 hover:text-white cursor-pointer"
+            >
+              Close ✕
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-slate-400 mb-1">Code Name</label>
+              <input
+                type="text"
+                value={newInvCode}
+                onChange={(e) => setNewInvCode(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-slate-400 mb-1">
+                Investigation Title
+              </label>
+              <input
+                type="text"
+                value={newInvTitle}
+                onChange={(e) => setNewInvTitle(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={creatingInv}
+              className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold cursor-pointer"
+            >
+              {creatingInv
+                ? "Initializing Repo & AI Kanban Tasks..."
+                : "Create Shared Investigation + Generate AI Tasks"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {!hasAccess ? (
         <div className="p-10 rounded-2xl border border-rose-500/40 bg-rose-950/20 text-center space-y-4 max-w-xl mx-auto my-8">
@@ -390,6 +489,31 @@ export default function InvestigationWorkspaceView({
           {/* STEP 2: DRAG-AND-DROP KANBAN BOARD */}
           {workflowStep === "kanban" && (
             <div className="space-y-4">
+              {onAiGenerateTasks && (
+                <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-xs">
+                  <span className="text-slate-300">
+                    Use <strong>Gemini 3.8 Flash</strong> to break this investigation into cross-newsroom verification tasks:
+                  </span>
+                  <button
+                    onClick={async () => {
+                      setGeneratingTasks(true);
+                      try {
+                        await onAiGenerateTasks(selectedInvestigation.id);
+                      } finally {
+                        setGeneratingTasks(false);
+                      }
+                    }}
+                    disabled={generatingTasks}
+                    className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold flex items-center gap-1.5 cursor-pointer shadow"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {generatingTasks
+                      ? "Generating Tasks with Gemini..."
+                      : "✨ Generate Verification Tasks with Gemini AI"}
+                  </button>
+                </div>
+              )}
+
               <KanbanBoard
                 tasks={invTasks}
                 organisations={organisations}
@@ -522,17 +646,42 @@ export default function InvestigationWorkspaceView({
               {/* Right 5 Columns: Pre-Publication Sign-Off Checklist & Publish Button */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 space-y-5">
-                  <div className="border-b border-slate-800 pb-3">
-                    <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                      Editorial & Legal Sign-Off Gate
-                    </span>
-                    <h3 className="text-base font-bold text-white mt-0.5">
-                      3 Required Approvals Before Publishing
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      AI never publishes content. All 3 partner sign-offs must be green to unlock publication to the News Wire.
-                    </p>
+                  <div className="border-b border-slate-800 pb-3 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">
+                        GitHub-Style Pull Request Review Gate
+                      </span>
+                      <h3 className="text-base font-bold text-white mt-0.5">
+                        3 Required Approvals Before Publishing
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        AI never publishes content. Run the Gemini PR Citation Check, then sign off all 3 human gates.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cCount = citationMatches.length;
+                        setPrReviewNote(
+                          `Gemini 3.8 Flash PR Check: Found ${cCount} primary source citation(s) (${citationMatches.slice(0, 2).join(", ") || "none"}). ${
+                            cCount >= 1
+                              ? "Ready for 3-Editor human sign-off."
+                              : "Warning: Please insert at least 1 primary citation before merging."
+                          }`
+                        );
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      AI PR Check
+                    </button>
                   </div>
+
+                  {prReviewNote && (
+                    <div className="p-3 rounded-xl bg-slate-950 border border-teal-500/30 text-xs text-teal-300">
+                      {prReviewNote}
+                    </div>
+                  )}
 
                   {/* 3 Reviewer Cards */}
                   <div className="space-y-3">

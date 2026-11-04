@@ -1,122 +1,43 @@
 services:
-  newsroom-app:
+  newsroom-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: cn-express-backend
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    environment:
+      - BACKEND_PORT=4000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
+    volumes:
+      - newsroom_sqlite:/app/data
+    networks:
+      - newsroom_net
+
+  newsroom-frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cn-newsroom-app
+    container_name: cn-nextjs-frontend
     ports:
       - "3000:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - BACKEND_URL=http://newsroom-backend:4000
       - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
-      - KANBAN_SERVICE_URL=http://localhost:3001
-      - GEAR_SERVICE_URL=http://localhost:3002
-      - EVIDENCE_VAULT_URL=http://localhost:8000
     volumes:
       - newsroom_sqlite:/app/data
     depends_on:
-      - kanban-board
-      - gear-exchange
-      - evidence-vault
-    networks:
-      - newsroom_net
-
-  kanban-board:
-    image: ghcr.io/plankanban/planka:latest
-    container_name: cn-kanban-board
-    ports:
-      - "3001:1337"
-    restart: unless-stopped
-    environment:
-      - BASE_URL=http://localhost:3001
-      - DATABASE_URL=postgresql://postgres:newsroom_pass@postgres:5432/kanban
-      - SECRET_KEY=connected-newsroom-kanban-secret-2026
-      - DEFAULT_ADMIN_EMAIL=editor@connectednewsroom.org
-      - DEFAULT_ADMIN_PASSWORD=newsroom-admin
-      - DEFAULT_ADMIN_NAME=Editorial Desk
-      - DEFAULT_ADMIN_USERNAME=editor
-    depends_on:
-      - postgres
-    volumes:
-      - kanban_avatars:/app/public/user-avatars
-      - kanban_attachments:/app/private/attachments
-    networks:
-      - newsroom_net
-
-  gear-exchange:
-    image: ghcr.io/sysadminsmedia/homebox:latest
-    container_name: cn-gear-exchange
-    ports:
-      - "3002:7745"
-    restart: unless-stopped
-    environment:
-      - HBOX_LOG_LEVEL=info
-      - HBOX_LOG_FORMAT=text
-      - HBOX_WEB_MAX_UPLOAD_SIZE=25
-      - HBOX_OPTIONS_ALLOW_REGISTRATION=true
-    volumes:
-      - gear_data:/data/
-    networks:
-      - newsroom_net
-
-  evidence-vault:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
-    container_name: cn-evidence-vault
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
-    environment:
-      - PAPERLESS_REDIS=redis://redis:6379
-      - PAPERLESS_DBHOST=postgres
-      - PAPERLESS_DBNAME=kanban
-      - PAPERLESS_DBUSER=postgres
-      - PAPERLESS_DBPASS=newsroom_pass
-      - PAPERLESS_OCR_LANGUAGE=eng
-      - PAPERLESS_ADMIN_USER=editor
-      - PAPERLESS_ADMIN_PASSWORD=newsroom-admin
-      - PAPERLESS_URL=http://localhost:8000
-      - PAPERLESS_APP_TITLE=Connected Newsroom Evidence Vault
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - vault_data:/usr/src/paperless/data
-      - vault_media:/usr/src/paperless/media
-      - vault_consume:/usr/src/paperless/consume
-    networks:
-      - newsroom_net
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: cn-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: newsroom_pass
-      POSTGRES_DB: kanban
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - newsroom_net
-
-  redis:
-    image: redis:7-alpine
-    container_name: cn-redis
-    restart: unless-stopped
+      - newsroom-backend
     networks:
       - newsroom_net
 
 volumes:
   newsroom_sqlite:
-  postgres_data:
-  kanban_avatars:
-  kanban_attachments:
-  gear_data:
-  vault_data:
-  vault_media:
-  vault_consume:
 
 networks:
   newsroom_net:

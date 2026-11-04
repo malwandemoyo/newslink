@@ -76,6 +76,13 @@ interface ResourceDispatchViewProps {
     broadcastId: string;
     bidId: string;
   }) => Promise<void>;
+  onCreateResource?: (payload: {
+    title: string;
+    category: ResourceCategory;
+    city: string;
+    suggestedRateUsd?: number;
+    includesOperator: boolean;
+  }) => Promise<void>;
   onSwitchOrg: (orgId: string) => void;
 }
 
@@ -94,6 +101,7 @@ export default function ResourceDispatchView({
   onCreateBroadcast,
   onSubmitBid,
   onAcceptBid,
+  onCreateResource,
   onSwitchOrg,
 }: ResourceDispatchViewProps) {
   const [subTab, setSubTab] = useState<"catalog" | "dispatch" | "bookings">(
@@ -101,6 +109,15 @@ export default function ResourceDispatchView({
   );
   const [showMap, setShowMap] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [showListGearModal, setShowListGearModal] = useState(false);
+  const [gearTitle, setGearTitle] = useState(
+    "Sony FX3 Cinema Camera + 24-70mm f/2.8 GM Kit"
+  );
+  const [gearCategory, setGearCategory] =
+    useState<ResourceCategory>("Camera & Optics");
+  const [gearCity, setGearCity] = useState("Bulawayo");
+  const [gearIncludesOp, setGearIncludesOp] = useState(false);
+  const [listingGear, setListingGear] = useState(false);
 
   // Broadcast Need Form State
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -262,6 +279,13 @@ export default function ResourceDispatchView({
           </button>
 
           <button
+            onClick={() => setShowListGearModal(!showListGearModal)}
+            className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
+          >
+            <Camera className="w-4 h-4" />+ List Camera / Gear (AI Priced)
+          </button>
+
+          <button
             onClick={() => setShowBroadcastModal(true)}
             className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
           >
@@ -270,6 +294,107 @@ export default function ResourceDispatchView({
           </button>
         </div>
       </div>
+
+      {/* Inline List New Camera / Gear Form (Gemini AI Auto-Priced) */}
+      {showListGearModal && onCreateResource && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!gearTitle.trim()) return;
+            setListingGear(true);
+            try {
+              await onCreateResource({
+                title: gearTitle.trim(),
+                category: gearCategory,
+                city: gearCity,
+                includesOperator: gearIncludesOp,
+              });
+              setShowListGearModal(false);
+              setSubTab("catalog");
+            } finally {
+              setListingGear(false);
+            }
+          }}
+          className="p-4 rounded-2xl border border-teal-500/40 bg-slate-900/95 space-y-3 shadow-xl text-xs"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-400" />
+              List Newsroom Equipment (Gemini 3.8 Flash Calculates Fair Peer-to-Peer Rate)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowListGearModal(false)}
+              className="text-slate-400 hover:text-white cursor-pointer"
+            >
+              Close ✕
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-2">
+              <label className="block text-slate-400 mb-1">
+                Equipment Title & Model
+              </label>
+              <input
+                type="text"
+                value={gearTitle}
+                onChange={(e) => setGearTitle(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1">Category</label>
+              <select
+                value={gearCategory}
+                onChange={(e) =>
+                  setGearCategory(e.target.value as ResourceCategory)
+                }
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"
+              >
+                <option value="Camera & Optics">Camera & Optics</option>
+                <option value="Drone & Aerial">Drone & Aerial</option>
+                <option value="Broadcast Audio">Broadcast Audio</option>
+                <option value="Studio & Editing">Studio & Editing</option>
+                <option value="Field Transport & Power">
+                  Field Transport & Power
+                </option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1">City</label>
+              <select
+                value={gearCity}
+                onChange={(e) => setGearCity(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"
+              >
+                <option value="Bulawayo">Bulawayo</option>
+                <option value="Harare">Harare</option>
+                <option value="Mutare">Mutare</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gearIncludesOp}
+                onChange={(e) => setGearIncludesOp(e.target.checked)}
+                className="accent-teal-500"
+              />
+              Includes licensed newsroom operator / technician
+            </label>
+            <button
+              type="submit"
+              disabled={listingGear}
+              className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold cursor-pointer"
+            >
+              {listingGear
+                ? "Pricing via Gemini 3.8 Flash & Listing..."
+                : "Price with Gemini AI & List Equipment"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Collapsible Interactive Leaflet Map */}
       {showMap && (

@@ -5,8 +5,11 @@ import {
   setCollection,
   insertAuditLog,
   resetSqliteDatabase,
+  recordLedgerTransaction,
 } from "@/lib/db";
 import {
+  INITIAL_ORGANISATIONS,
+  INITIAL_INVESTIGATIONS,
   INITIAL_RESOURCES,
   INITIAL_RESOURCE_REQUESTS,
   INITIAL_DISPATCH_BROADCASTS,
@@ -18,6 +21,8 @@ import {
   INITIAL_SYNDICATION_REQUESTS,
 } from "@/data/seed";
 import {
+  Organisation,
+  Investigation,
   Resource,
   ResourceRequest,
   DispatchBroadcast,
@@ -30,6 +35,38 @@ import {
   SyndicationRequest,
   AuditLogEntry,
 } from "@/types/newsroom";
+
+const GEMINI_API_KEY = (
+  process.env.GEMINI_API_KEY ||
+  "AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw"
+).trim();
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+
+async function callGeminiJson<T>(prompt: string, fallback: T): Promise<T> {
+  if (!GEMINI_API_KEY) return fallback;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+        signal: AbortSignal.timeout(7000),
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (raw) return JSON.parse(raw) as T;
+    }
+  } catch {
+    // Fallback on network error
+  }
+  return fallback;
+}
 
 const ACTOR_BY_ORG: Record<string, string> = {
   "org-byo": "Sipho Ncube",
@@ -79,6 +116,323 @@ export async function POST(req: NextRequest) {
     if (action === "reset_db") {
       const resetState = resetSqliteDatabase();
       return NextResponse.json(resetState);
+    }
+
+    // 0A. Register New Media Organisation (Demo Journey #1)
+    if (action === "register_organisation") {
+      const orgs = getCollection<Organisation[]>(
+        "organisations",
+        INITIAL_ORGANISATIONS
+      );
+      const city = payload.city || "Bulawayo";
+      const cityCoords: Record<string, { lat: number; lng: number }> = {
+        Bulawayo: { lat: -20.154, lng: 28.585 },
+        Harare: { lat: -17.829, lng: 31.052 },
+        Mutare: { lat: -18.972, lng: 32.669 },
+        Gweru: { lat: -19.45, lng: 29.817 },
+      };
+      const newOrg: Organisation = {
+        id: `org-${Date.now().toString(36)}`,
+        name: payload.name,
+        shortName: payload.shortName || payload.name.slice(0, 16),
+        type: "Community Newsroom",
+        city,
+        country: "Zimbabwe",
+        coordinates: cityCoords[city] || cityCoords.Bulawayo,
+        verified: true,
+        memberCount: 8,
+        specialties: payload.beats || [
+          "Investigative Reporting",
+          "Public Interest",
+        ],
+        badgeColor: "teal",
+        description:
+          payload.description ||
+          "Independent media organisation retaining 100% editorial independence and copyright control.",
+      };
+      setCollection("organisations", [...orgs, newOrg]);
+      recordLedgerTransaction({
+        fromOrgId: null,
+        toOrgId: newOrg.id,
+        category: "Onboarding Escrow Grant",
+        description: `Initial $300 USD Escrow + 120 Network Credits activated for ${newOrg.name}`,
+        grossAmountUsd: 300,
+        creditsMoved: 120,
+        paymentRail: "Connected Newsroom Network Grant",
+        referenceId: newOrg.id,
+      });
+      recordAudit(
+        newOrg.id,
+        "Investigation ACL",
+        `Registered media organisation '${newOrg.name}' (${newOrg.city}) with $300 USD + 120 Credits wallet`,
+        newOrg.id
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    // 0B. List New Camera / Equipment with Gemini AI Pricing (Demo Journey #2)
+    if (action === "create_resource") {
+      const resources = getCollection<Resource[]>("resources", INITIAL_RESOURCES);
+      const city = payload.city || "Bulawayo";
+      const cityCoords: Record<string, { lat: number; lng: number }> = {
+        Bulawayo: { lat: -20.153, lng: 28.581 },
+        Harare: { lat: -17.826, lng: 31.045 },
+        Mutare: { lat: -18.973, lng: 32.671 },
+      };
+
+      const aiPricing = await callGeminiJson(
+        `Suggest a fair peer-to-peer daily rental rate in USD (between 15 and 75) for a newsroom in ${city} lending "${payload.title}" (${payload.category}). Return strictly JSON: {"suggestedRateUsd": number, "rationale": "short string"}`,
+        {
+          suggestedRateUsd: Number(payload.suggestedRateUsd || 35),
+          rationale: "AI peer-to-peer newsroom rate (~60% below commercial rental)",
+        }
+      );
+
+      const newRes: Resource = {
+        id: `res-${Date.now()}`,
+        title: payload.title,
+        serialNumber: `CN-${Math.floor(1000 + Math.random() * 9000)}`,
+        category: payload.category || "Camera & Optics",
+        ownerOrgId: activeOrgId,
+        city,
+        coordinates: cityCoords[city] || cityCoords.Bulawayo,
+        status: "Available",
+        condition: "Excellent",
+        suggestedRateUsd:
+          Number(payload.suggestedRateUsd) || aiPricing.suggestedRateUsd,
+        dailyTerms:
+          payload.sharingTerms ||
+          `${aiPricing.rationale} • Reciprocal Network Credits accepted`,
+        collateralRequirement: "Partner Newsroom MoU + PIN Handover",
+        specs: payload.specs || [
+          "Verified Newsroom Asset",
+          "Ready for Field Dispatch",
+        ],
+        availableWindow: "Immediate — Available Today",
+      };
+
+      setCollection("resources", [newRes, ...resources]);
+      recordAudit(
+        activeOrgId,
+        "Resource Booking",
+        `Listed equipment '${newRes.title}' ($${newRes.suggestedRateUsd}/day via Gemini pricing)`,
+        newRes.id
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    // 0C. Create New Shared Investigation + Gemini AI Initial Kanban Tasks (Demo Journey #4)
+    if (action === "create_investigation") {
+      const investigations = getCollection<Investigation[]>(
+        "investigations",
+        INITIAL_INVESTIGATIONS
+      );
+      const drafts = getCollection<InvestigationDraft[]>(
+        "investigation_drafts",
+        INITIAL_INVESTIGATION_DRAFTS
+      );
+      const tasks = getCollection<KanbanTask[]>(
+        "kanban_tasks",
+        INITIAL_KANBAN_TASKS
+      );
+
+      const invId = `inv-${Date.now().toString(36)}`;
+      const codeName =
+        payload.codeName ||
+        `PROJECT ${payload.title.split(" ")[0].toUpperCase()}`;
+      const newInv: Investigation = {
+        id: invId,
+        codeName,
+        repoSlug: codeName.toLowerCase().replace(/\s+/g, "-"),
+        title: payload.title,
+        summary:
+          payload.summary ||
+          "Cross-newsroom collaborative investigation with shared document RAG and 3-gate editorial verification.",
+        leadOrgId: activeOrgId,
+        partnerOrgIds: payload.partnerOrgIds || ["org-cite", "org-hre"],
+        visibility: "Partner Network Only",
+        status: "Active Reporting",
+        createdAt: nowStamp(),
+        embargoUntil: payload.embargoUntil || "2026-11-15 06:00 CAT",
+        editorialAgreement:
+          "Shared co-byline & 48-hour Right-of-Reply required prior to publication.",
+      };
+
+      const aiTasks = await callGeminiJson<{
+        tasks: Array<{
+          title: string;
+          description: string;
+          column: KanbanTask["column"];
+          priority: KanbanTask["priority"];
+        }>;
+      }>(
+        `Generate 3 investigative journalism verification tasks for "${newInv.title}" (${newInv.summary}). Return strictly JSON: {"tasks": [{"title": "string", "description": "string", "column": "leads" | "verification" | "fieldwork", "priority": "High" | "Medium"}]}`,
+        {
+          tasks: [
+            {
+              title: `Obtain primary procurement & audit records for ${newInv.codeName}`,
+              description:
+                "Upload official PDFs to the investigation repo and run Gemini citation extraction.",
+              column: "verification",
+              priority: "High",
+            },
+            {
+              title: "Dispatch partner field crew for on-site visual corroboration",
+              description:
+                "Book camera/drone via inDrive Resource Exchange and log geotagged evidence.",
+              column: "fieldwork",
+              priority: "High",
+            },
+          ],
+        }
+      );
+
+      const createdTasks: KanbanTask[] = (aiTasks.tasks || []).map((t, i) => ({
+        id: `task-${Date.now()}-${i}`,
+        investigationId: invId,
+        title: t.title,
+        description: t.description,
+        column:
+          t.column === "leads" ||
+          t.column === "verification" ||
+          t.column === "fieldwork"
+            ? t.column
+            : "verification",
+        assigneeOrgId:
+          i % 2 === 0
+            ? activeOrgId
+            : newInv.partnerOrgIds[0] || activeOrgId,
+        assigneeName: "AI-Generated Verification Task",
+        priority: t.priority === "High" || t.priority === "Medium" ? t.priority : "High",
+        evidenceRef: "Pending Primary Upload",
+        rightOfReplyStatus: "Dispatched (72h Window)",
+        requiresHumanSignoff: true,
+        comments: [],
+      }));
+
+      const newDraft: InvestigationDraft = {
+        investigationId: invId,
+        headline: `${newInv.title} — Collaborative Investigation Draft`,
+        subheadline: newInv.summary,
+        bodyMarkdown: `### Executive Findings\n\nCollaborating newsrooms initialized **${newInv.codeName}**. Upload primary source documents in Step 1 and click **+ Add Quote & Cite in Story** to populate verified evidence.\n`,
+        licenseType: "CC BY-NC-ND 4.0 (Network Attribution)",
+        attributionText: `Joint investigation by ${newInv.codeName} Partner Network.`,
+        lastUpdatedAt: nowStamp(),
+        mediaAssets: ["Primary Document Bundle"],
+        approvals: [
+          {
+            role: "Lead Editor",
+            orgId: activeOrgId,
+            reviewerName: ACTOR_BY_ORG[activeOrgId] || "Lead Editor",
+            approved: false,
+            note: "Awaiting primary citations",
+          },
+          {
+            role: "Partner Data Desk",
+            orgId: newInv.partnerOrgIds[0] || "org-cite",
+            reviewerName: "Partner Editor",
+            approved: false,
+            note: "Awaiting field verification",
+          },
+          {
+            role: "Pre-Publication Legal",
+            orgId: "org-hre",
+            reviewerName: "Legal Review Desk",
+            approved: false,
+            note: "Awaiting 48-hour Right-of-Reply check",
+          },
+        ],
+      };
+
+      setCollection("investigations", [newInv, ...investigations]);
+      setCollection("investigation_drafts", [newDraft, ...drafts]);
+      setCollection("kanban_tasks", [...createdTasks, ...tasks]);
+
+      recordAudit(
+        activeOrgId,
+        "Investigation ACL",
+        `Created shared investigation '${newInv.codeName}' + generated ${createdTasks.length} AI verification tasks`,
+        invId
+      );
+      return NextResponse.json(getFullWorkspaceState());
+    }
+
+    // 0D. Gemini AI Kanban Task Generator for Active Investigation
+    if (action === "ai_generate_kanban_tasks") {
+      const investigations = getCollection<Investigation[]>(
+        "investigations",
+        INITIAL_INVESTIGATIONS
+      );
+      const tasks = getCollection<KanbanTask[]>(
+        "kanban_tasks",
+        INITIAL_KANBAN_TASKS
+      );
+      const inv =
+        investigations.find((i) => i.id === payload.investigationId) ||
+        investigations[0];
+
+      const aiGenerated = await callGeminiJson<{
+        tasks: Array<{
+          title: string;
+          description: string;
+          column: KanbanTask["column"];
+          priority: KanbanTask["priority"];
+          evidenceRef: string;
+        }>;
+      }>(
+        `You are the Connected Newsroom Editorial Kanban AI. Generate 2 new concrete verification tasks for the investigation "${inv.title}" (${inv.summary}). Return strictly JSON: {"tasks": [{"title": "string", "description": "string", "column": "leads" | "verification" | "fieldwork" | "editorial_review", "priority": "High" | "Medium", "evidenceRef": "string"}]}`,
+        {
+          tasks: [
+            {
+              title:
+                "Cross-verify beneficial ownership filings against tender bank disbursements",
+              description:
+                "Match CR14 company directors with Auditor-General payment vouchers.",
+              column: "verification",
+              priority: "High",
+              evidenceRef: "Auditor-General Report p. 47",
+            },
+            {
+              title: "Log 48-hour Right-of-Reply response from named contractor",
+              description:
+                "Attach timestamped email delivery receipt and written response before legal sign-off.",
+              column: "editorial_review",
+              priority: "High",
+              evidenceRef: "Legal Pre-Publication Gate",
+            },
+          ],
+        }
+      );
+
+      const newTasks: KanbanTask[] = (aiGenerated.tasks || []).map((t, idx) => ({
+        id: `task-ai-${Date.now()}-${idx}`,
+        investigationId: inv.id,
+        title: `✨ [Gemini Task] ${t.title}`,
+        description: t.description,
+        column:
+          t.column === "leads" ||
+          t.column === "verification" ||
+          t.column === "fieldwork" ||
+          t.column === "editorial_review"
+            ? t.column
+            : "verification",
+        assigneeOrgId: activeOrgId,
+        assigneeName: `${ACTOR_BY_ORG[activeOrgId] || "Editor"} (AI Assisted)`,
+        priority: t.priority === "High" || t.priority === "Medium" ? t.priority : "High",
+        evidenceRef: t.evidenceRef || "Primary Source Repo",
+        rightOfReplyStatus: "Dispatched (72h Window)",
+        requiresHumanSignoff: true,
+        comments: [],
+      }));
+
+      setCollection("kanban_tasks", [...newTasks, ...tasks]);
+      recordAudit(
+        activeOrgId,
+        "AI Query",
+        `Generated ${newTasks.length} verification tasks on Kanban board via ${GEMINI_MODEL}`,
+        inv.id
+      );
+      return NextResponse.json(getFullWorkspaceState());
     }
 
     // 1. Direct Equipment Booking Request
@@ -203,6 +557,17 @@ export async function POST(req: NextRequest) {
 
       setCollection("resource_requests", updatedReqs);
       setCollection("resources", updatedResources);
+      if (nextStatus === "Approved" || nextStatus === "Returned") {
+        recordLedgerTransaction({
+          fromOrgId: targetReq.requesterOrgId,
+          toOrgId: targetReq.ownerOrgId,
+          category: "inDrive Gear Escrow",
+          description: `${nextStatus === "Approved" ? "Escrow locked" : "Escrow released (95% lender / 5% platform)"} for booking ${targetReq.id}`,
+          grossAmountUsd: Number(targetReq.counterRateUsd ?? targetReq.offeredRateUsd ?? 35),
+          paymentRail: "USD Escrow (Paynow / EcoCash)",
+          referenceId: targetReq.id,
+        });
+      }
       recordAudit(
         activeOrgId,
         "Resource Booking",
@@ -324,6 +689,17 @@ export async function POST(req: NextRequest) {
       });
 
       setCollection("dispatch_broadcasts", updated);
+      const matchedBroadcast = broadcasts.find((b) => b.id === payload.broadcastId);
+      const matchedBid = matchedBroadcast?.bids.find((b) => b.id === payload.bidId);
+      recordLedgerTransaction({
+        fromOrgId: activeOrgId,
+        toOrgId: matchedBid?.bidderOrgId || "org-cite",
+        category: "inDrive Field Dispatch",
+        description: `inDrive Dispatch settled: '${matchedBid?.resourceTitle || "Field Kit"}' (PIN ${pin})`,
+        grossAmountUsd: Number(matchedBid?.proposedRateUsd ?? 55),
+        paymentRail: "USD Escrow (EcoCash / Paynow)",
+        referenceId: payload.broadcastId,
+      });
       recordAudit(
         activeOrgId,
         "inDrive Dispatch",
@@ -614,6 +990,16 @@ export async function POST(req: NextRequest) {
             : s
         )
       );
+      recordLedgerTransaction({
+        fromOrgId: activeOrgId,
+        toOrgId: payload.originOrgId,
+        category: "Story Syndication Split",
+        description: `Republication license & co-investigation revenue split (60% Lead / 35% Partner / 5% Platform)`,
+        grossAmountUsd: 80,
+        creditsMoved: 25,
+        paymentRail: "USD Wire / Network Credits Split",
+        referenceId: payload.storyId,
+      });
       recordAudit(
         activeOrgId,
         "Story Syndication",
