@@ -9,8 +9,8 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
       - KANBAN_SERVICE_URL=http://localhost:3001
       - GEAR_SERVICE_URL=http://localhost:3002
       - EVIDENCE_VAULT_URL=http://localhost:8000

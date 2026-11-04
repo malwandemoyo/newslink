@@ -117,8 +117,12 @@ export async function POST(req: NextRequest) {
       classification: p.classification,
     }));
 
-    const geminiApiKey = (apiKey || process.env.GEMINI_API_KEY || "").trim();
-    const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const geminiApiKey = (
+      apiKey ||
+      process.env.GEMINI_API_KEY ||
+      "AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw"
+    ).trim();
+    const geminiModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
     if (geminiApiKey) {
       const contextBlock = selectedPassages
@@ -134,15 +138,11 @@ Question: ${query}
 Passages from "${doc.title}":
 ${contextBlock}`;
 
-      const candidateUrls = geminiApiKey.startsWith("AQ.")
-        ? [
-            `https://aiplatform.googleapis.com/v1/projects/487947928800/locations/global/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-            `https://aiplatform.googleapis.com/v1beta1/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-            `https://aiplatform.googleapis.com/v1/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-          ]
-        : [
-            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-          ];
+      const candidateUrls = [
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`,
+        `https://aiplatform.googleapis.com/v1/publishers/google/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+      ];
 
       for (const endpointUrl of candidateUrls) {
         try {
