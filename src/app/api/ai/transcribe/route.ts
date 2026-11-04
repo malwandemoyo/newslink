@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       fieldNotes = body.fieldNotes || "";
     }
 
-    const promptText = `You are the Connected Newsroom AI Interview Transcriber & Translator for investigative journalists in Zimbabwe.
+    const promptText = `You are the NewsLink AI Interview Transcriber & Translator for investigative journalists in Zimbabwe.
 Transcribe and structure this field interview ("${title}", notes: "${fieldNotes || "Interview with Gwanda/Umzingwane borehole caretaker and ward councillor regarding night-time tailings discharge and undelivered booster pumps"}").
 Include realistic timestamped segments (including isiNdebele/ChiShona phrases with accurate English translations where appropriate) and classify each segment as "Documented Evidence" (first-hand eyewitness observation) or "Unverified Allegation" (hearsay requiring corroboration).
 Return strictly JSON:

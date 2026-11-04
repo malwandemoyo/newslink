@@ -15,7 +15,7 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Connected Newsroom | Shared Digital Infrastructure for Independent Journalism",
+  title: "NewsLink | Shared Digital Infrastructure for Independent Journalism",
   description:
     "Open-source, AI-assisted collaboration platform connecting independent media organisations through shared resources, expertise exchange, collaborative investigations, and content distribution.",
 };

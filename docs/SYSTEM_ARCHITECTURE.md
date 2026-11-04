@@ -1,4 +1,4 @@
-# System Architecture — Connected Newsroom
+# System Architecture — NewsLink
 
 ## 1. High-Level Architecture Diagram
 

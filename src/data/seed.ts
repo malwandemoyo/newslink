@@ -533,7 +533,7 @@ Procurement schedules show the council was invoiced USD $1,850 per metric ton of
 While three ward councillors alleged during public hearings that sluice valves were manually opened on the night of 19 October 2026, inspectors noted automated flow-meter logs were missing for that four-hour window; our reporting treats those night-discharge claims as unverified pending independent sensor corroboration [Citation: 2026 Auditor-General & EMA Joint Inspection Report, p. 29].`,
     licenseType: "CC BY-NC-ND 4.0 (Network Attribution)",
     attributionText:
-      "Reported jointly by Matabeleland Independent (Bulawayo), Harare Investigative Collective, and CITE ZW via Connected Newsroom.",
+      "Reported jointly by Matabeleland Independent (Bulawayo), Harare Investigative Collective, and CITE ZW via NewsLink.",
     mediaAssets: [
       "Full 2,400-word Verified Print Investigation (EN / Ndebele / Shona)",
       "Sony FX6 4K Field Footage at Weir #3 (CITE ZW)",
@@ -743,7 +743,7 @@ export const INITIAL_STORIES: StoryPackage[] = [
     embargoLift: "Immediate Release (Verified)",
     licenseType: "CC BY-NC-ND 4.0 (Network Attribution)",
     attributionRequirement:
-      "Must credit: 'Reported jointly by Matabeleland Independent, Harare Investigative Collective, and CITE ZW via Connected Newsroom.'",
+      "Must credit: 'Reported jointly by Matabeleland Independent, Harare Investigative Collective, and CITE ZW via NewsLink.'",
     mediaIncluded: [
       "2,400-word Print & Digital Investigation (EN / Ndebele / Shona)",
       "4-min 4K Documentary Field Report (Shot on CITE ZW Sony FX6)",

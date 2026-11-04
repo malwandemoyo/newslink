@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       (r) => r.status === "Available"
     );
 
-    const promptText = `You are the Connected Newsroom AI Resource & Collaborator Matchmaker.
+    const promptText = `You are the NewsLink AI Resource & Collaborator Matchmaker.
 Given the active investigation:
 Title: "${inv.title}"
 Summary: "${inv.summary}"

@@ -1,4 +1,4 @@
-# Connected Newsroom
+# NewsLink
 
 > **Stronger newsrooms. Better journalism.**
 > An open-source, AI-assisted collaboration platform connecting independent media organisations across Zimbabwe and Southern Africa through shared equipment, specialist discovery, collaborative investigations, grounded AI verification, and story syndication.
@@ -30,7 +30,7 @@ connected-newsroom/
 │   │   │   ├── ai/recommend/route.ts        # AI Equipment & Specialist matchmaker
 │   │   │   ├── ai/ingest/route.ts           # PDF/TXT/CSV & OCR passage indexing
 │   │   │   └── telemetry/load-test/route.ts # 10-Organisation (50-op) concurrent benchmark
-│   │   └── page.tsx                         # Unified Connected Newsroom portal
+│   │   └── page.tsx                         # Unified NewsLink portal
 │   ├── components/
 │   │   ├── GeographicMap.tsx                # 4-layer Leaflet map (Hubs, Gear, Specialists, Broadcasts)
 │   │   ├── MediaVerificationWorkspace.tsx   # ZMC-NUST Q1 & Q5 Headline vs. Audit verifier

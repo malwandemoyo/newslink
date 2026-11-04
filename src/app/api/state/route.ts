@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
         description: `Initial $300 USD Escrow + 120 Network Credits activated for ${newOrg.name}`,
         grossAmountUsd: 300,
         creditsMoved: 120,
-        paymentRail: "Connected Newsroom Network Grant",
+        paymentRail: "NewsLink Network Grant",
         referenceId: newOrg.id,
       });
       recordAudit(
@@ -377,7 +377,7 @@ export async function POST(req: NextRequest) {
           evidenceRef: string;
         }>;
       }>(
-        `You are the Connected Newsroom Editorial Kanban AI. Generate 2 new concrete verification tasks for the investigation "${inv.title}" (${inv.summary}). Return strictly JSON: {"tasks": [{"title": "string", "description": "string", "column": "leads" | "verification" | "fieldwork" | "editorial_review", "priority": "High" | "Medium", "evidenceRef": "string"}]}`,
+        `You are the NewsLink Editorial Kanban AI. Generate 2 new concrete verification tasks for the investigation "${inv.title}" (${inv.summary}). Return strictly JSON: {"tasks": [{"title": "string", "description": "string", "column": "leads" | "verification" | "fieldwork" | "editorial_review", "priority": "High" | "Medium", "evidenceRef": "string"}]}`,
         {
           tasks: [
             {

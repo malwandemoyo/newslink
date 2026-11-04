@@ -1,6 +1,6 @@
-# Security & Editorial Governance Model — Connected Newsroom
+# Security & Editorial Governance Model — NewsLink
 
-Independent investigative newsrooms handle sensitive public-interest records, whistle-blower leaks, and embargoed drafts. Connected Newsroom enforces defence-in-depth across four layers:
+Independent investigative newsrooms handle sensitive public-interest records, whistle-blower leaks, and embargoed drafts. NewsLink enforces defence-in-depth across four layers:
 
 ---
 

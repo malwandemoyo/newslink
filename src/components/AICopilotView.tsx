@@ -75,7 +75,7 @@ export default function AICopilotView({
   const [aiResult, setAiResult] = useState<AIQueryResponse | null>({
     id: "ai-initial",
     query: PRESET_QUERIES[0],
-    modelUsed: "Connected Newsroom Grounded Research Assistant",
+    modelUsed: "NewsLink Grounded Research Assistant",
     inferenceMode: "Gemini Server-Side API (Approved Public Doc)",
     answerSummary:
       'Official EMA laboratory tests on 14 August 2026 recorded dissolved lithium concentrations of 4.8 mg/L and sulphate levels of 1,120 mg/L at 400 metres downstream of Tailings Dam #2—exceeding the statutory Red-Class effluent limit by 340% [Page 14]. Inspectors also documented a 12-metre tear in the HDPE liner on 02 September 2026 [Page 21].',

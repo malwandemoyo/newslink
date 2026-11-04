@@ -1,6 +1,6 @@
-# API Documentation — Connected Newsroom
+# API Documentation — NewsLink
 
-Connected Newsroom exposes RESTful JSON endpoints across the **Next.js Application Server (`http://localhost:3000`)** and the **Express + SQLite Microservice (`http://localhost:4000`)**. All API keys are loaded strictly from `.env`.
+NewsLink exposes RESTful JSON endpoints across the **Next.js Application Server (`http://localhost:3000`)** and the **Express + SQLite Microservice (`http://localhost:4000`)**. All API keys are loaded strictly from `.env`.
 
 ---
 

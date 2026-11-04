@@ -1,4 +1,4 @@
-# Functional & Non-Functional Requirements — Connected Newsroom
+# Functional & Non-Functional Requirements — NewsLink
 
 ## 1. Acceptance Criteria Checklist
 

@@ -1,4 +1,4 @@
-# Connected Newsroom — Design System (`DESIGN.md`)
+# NewsLink — Design System (`DESIGN.md`)
 
 > Generated and enforced via `npx ui-skills` (`ibelick/baseline-ui`, `anthropics/frontend-design`, and `ibelick/create-design-md`).
 

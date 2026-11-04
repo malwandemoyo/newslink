@@ -1,6 +1,6 @@
-# Database Design — Connected Newsroom
+# Database Design — NewsLink
 
-Connected Newsroom uses **SQLite (`node:sqlite`)** stored at `data/connected_newsroom.sqlite` and initialized via [`database/schema.sql`](file:///home/malwande/School/Connected%20NewsRoom/database/schema.sql).
+NewsLink uses **SQLite (`node:sqlite`)** stored at `data/connected_newsroom.sqlite` and initialized via [`database/schema.sql`](file:///home/malwande/School/Connected%20NewsRoom/database/schema.sql).
 
 ---
 

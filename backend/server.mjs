@@ -146,7 +146,7 @@ app.get("/api/health", (_req, res) => {
   const txCount = db.prepare("SELECT COUNT(*) as c FROM ledger_transactions").get().c;
   const stat = fs.statSync(DB_PATH);
   res.json({
-    service: "Connected Newsroom Express + SQLite + Gemini AI Backend",
+    service: "NewsLink Express + SQLite + Gemini AI Backend",
     status: "ok",
     port: PORT,
     geminiModel: GEMINI_MODEL,
@@ -219,7 +219,7 @@ app.post("/api/organisations", (req, res) => {
 // 3. inDrive AI Fare Estimator & Equipment Listing
 app.post("/api/indrive/ai-price-gear", async (req, res) => {
   const { title, category, city, includesOperator } = req.body;
-  const prompt = `You are the Connected Newsroom inDrive Equipment Pricing AI for independent media in Zimbabwe.
+  const prompt = `You are the NewsLink inDrive Equipment Pricing AI for independent media in Zimbabwe.
 Given equipment "${title}" (Category: ${category}, City: ${city}, Includes Operator: ${Boolean(includesOperator)}), return JSON with:
 {
   "suggestedDailyRateUsd": number (between 15 and 85),
@@ -319,7 +319,7 @@ app.post("/api/ledger/transfer", (req, res) => {
 // 5. Kanban AI Verification Task Generator (Gemini 3.8 Flash)
 app.post("/api/kanban/ai-generate-tasks", async (req, res) => {
   const { investigationTitle, leadHypothesis, activeOrgId = "org-byo" } = req.body;
-  const prompt = `You are the Connected Newsroom Editorial Kanban AI Architect.
+  const prompt = `You are the NewsLink Editorial Kanban AI Architect.
 For the collaborative investigation "${investigationTitle}" (Hypothesis/Lead: "${leadHypothesis}"), generate 3 concrete cross-newsroom verification tasks across the workflow stages.
 Return strictly a JSON object:
 {
@@ -383,7 +383,7 @@ app.post("/api/github/ai-pr-review", async (req, res) => {
   const { headline, bodyMarkdown, documentTitles = [] } = req.body;
   const citationsFound = (bodyMarkdown || "").match(/\[Citation:[^\]]+\]/g) || [];
 
-  const prompt = `You are the Connected Newsroom GitHub-Style Pull Request Editorial & Legal Reviewer.
+  const prompt = `You are the NewsLink GitHub-Style Pull Request Editorial & Legal Reviewer.
 Review this investigative story draft before human editors merge it to the News Exchange.
 Headline: "${headline}"
 Draft Body:
@@ -436,6 +436,6 @@ Return strictly JSON:
 
 app.listen(PORT, () => {
   console.log(
-    `[Connected Newsroom Backend] Express + SQLite + Gemini (${GEMINI_MODEL}) listening on http://localhost:${PORT}`
+    `[NewsLink Backend] Express + SQLite + Gemini (${GEMINI_MODEL}) listening on http://localhost:${PORT}`
   );
 });

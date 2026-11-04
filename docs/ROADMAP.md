@@ -1,6 +1,6 @@
-# Product Roadmap — Connected Newsroom
+# Product Roadmap — NewsLink
 
-Connected Newsroom is designed to evolve from a regional hackathon MVP into sustainable public-interest media infrastructure across Southern Africa.
+NewsLink is designed to evolve from a regional hackathon MVP into sustainable public-interest media infrastructure across Southern Africa.
 
 ---
 

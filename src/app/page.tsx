@@ -373,11 +373,11 @@ export default function ConnectedNewsroomApp() {
           {/* Brand Logo */}
           <div className="px-5 py-6 flex items-center gap-3">
             <div className="size-10 rounded-lg bg-teal-400 flex items-center justify-center text-slate-950 font-serif font-bold text-lg">
-              Cn
+              NL
             </div>
             <div>
               <h1 className="text-lg text-slate-50 leading-none">
-                Connected Newsroom
+                NewsLink
               </h1>
               <p className="text-xs text-slate-400 mt-1.5">
                 Stronger newsrooms. Better journalism.

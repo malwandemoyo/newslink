@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
         )
         .join("\n\n");
 
-      const promptText = `You are the Connected Newsroom Research Copilot. Answer the journalist's question strictly using the provided passages. Cite exact page numbers in brackets like [Page X] and explicitly separate Documented Evidence from Unverified Allegations.
+      const promptText = `You are the NewsLink Research Copilot. Answer the journalist's question strictly using the provided passages. Cite exact page numbers in brackets like [Page X] and explicitly separate Documented Evidence from Unverified Allegations.
 Question: ${query}
 
 Passages from "${doc.title}":
