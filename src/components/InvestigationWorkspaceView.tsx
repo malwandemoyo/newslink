@@ -103,9 +103,29 @@ export default function InvestigationWorkspaceView({
   const [workflowStep, setWorkflowStep] = useState<
     "research" | "kanban" | "write_publish"
   >("research");
-  const [researchMode, setResearchMode] = useState<"documents" | "headline">(
-    "documents"
+  const [researchMode, setResearchMode] = useState<
+    "documents" | "headline" | "transcribe"
+  >("documents");
+  const [transcribing, setTranscribing] = useState(false);
+  const [audioTitle, setAudioTitle] = useState(
+    "Gwanda Booster Station Caretaker & Ward 4 Field Interview"
   );
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [transcriptData, setTranscriptData] = useState<{
+    title: string;
+    modelUsed: string;
+    durationSummary: string;
+    summary: string;
+    keyEntities: string[];
+    segments: Array<{
+      timestamp: string;
+      speaker: string;
+      originalLanguage: string;
+      verbatimQuote: string;
+      englishTranslation?: string;
+      classification: string;
+    }>;
+  } | null>(null);
   const [showNewInvModal, setShowNewInvModal] = useState(false);
   const [newInvCode, setNewInvCode] = useState("PROJECT ZAMBEZI");
   const [newInvTitle, setNewInvTitle] = useState(
@@ -432,7 +452,7 @@ export default function InvestigationWorkspaceView({
           {workflowStep === "research" && (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setResearchMode("documents")}
                     className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
@@ -452,6 +472,16 @@ export default function InvestigationWorkspaceView({
                     }`}
                   >
                     1B. Verify Headline / Claim (Before & After)
+                  </button>
+                  <button
+                    onClick={() => setResearchMode("transcribe")}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      researchMode === "transcribe"
+                        ? "bg-teal-500 text-slate-950"
+                        : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    1C. Transcribe Interview & Recordings (AI)
                   </button>
                 </div>
                 <button
@@ -475,13 +505,154 @@ export default function InvestigationWorkspaceView({
                     setWorkflowStep("write_publish");
                   }}
                 />
-              ) : (
+              ) : researchMode === "headline" ? (
                 <MediaVerificationWorkspace
                   onSendToStoryDraft={(verifiedBlock) => {
                     insertCitationTag(verifiedBlock);
                     setWorkflowStep("write_publish");
                   }}
                 />
+              ) : (
+                <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-5 space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-teal-400" />
+                        AI Interview & Field Audio Transcription (Gemini Multimodal)
+                      </h3>
+                      <p className="text-slate-400 mt-0.5">
+                        Upload an interview recording (.mp3, .wav, .m4a) or transcribe the Gwanda field recording with automatic isiNdebele/ChiShona translation and timestamp citations.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setTranscribing(true);
+                      try {
+                        const fd = new FormData();
+                        if (audioFile) fd.append("file", audioFile);
+                        fd.append("title", audioTitle);
+                        fd.append("activeOrgId", activeOrgId);
+                        const res = await fetch("/api/ai/transcribe", {
+                          method: "POST",
+                          body: fd,
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setTranscriptData(data);
+                        }
+                      } finally {
+                        setTranscribing(false);
+                      }
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-slate-900/80 p-4 rounded-xl border border-slate-800"
+                  >
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">
+                        Interview Recording (.mp3, .wav, .m4a — or use field sample)
+                      </label>
+                      <input
+                        type="file"
+                        accept=".mp3,.wav,.m4a,.ogg,.webm"
+                        onChange={(e) =>
+                          setAudioFile(e.target.files?.[0] || null)
+                        }
+                        className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-teal-500 file:text-slate-950 file:font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">
+                        Interview Source Title
+                      </label>
+                      <input
+                        type="text"
+                        value={audioTitle}
+                        onChange={(e) => setAudioTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={transcribing}
+                      className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold cursor-pointer shadow"
+                    >
+                      {transcribing
+                        ? "Transcribing via Gemini 3.8 Flash..."
+                        : "✨ Transcribe & Translate Interview"}
+                    </button>
+                  </form>
+
+                  {transcriptData && (
+                    <div className="space-y-3 pt-2">
+                      <div className="p-3.5 rounded-xl bg-slate-900 border border-teal-500/30 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="font-bold text-teal-300">
+                            {transcriptData.title} • {transcriptData.durationSummary}
+                          </div>
+                          <p className="text-slate-300 mt-1">
+                            {transcriptData.summary}
+                          </p>
+                        </div>
+                        <span className="font-mono text-[11px] text-emerald-300">
+                          {transcriptData.modelUsed}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {transcriptData.segments.map((seg, i) => (
+                          <div
+                            key={i}
+                            className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-bold text-white">
+                                [{seg.timestamp}] {seg.speaker}{" "}
+                                <span className="text-teal-400 font-normal">
+                                  ({seg.originalLanguage})
+                                </span>
+                              </span>
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                                  seg.classification === "Documented Evidence"
+                                    ? "bg-emerald-500/15 text-emerald-300"
+                                    : "bg-amber-500/15 text-amber-300"
+                                }`}
+                              >
+                                {seg.classification}
+                              </span>
+                            </div>
+                            <blockquote className="text-slate-200 border-l-2 border-teal-500 pl-3 py-0.5">
+                              “{seg.verbatimQuote}”
+                            </blockquote>
+                            {seg.englishTranslation &&
+                              seg.englishTranslation !== seg.verbatimQuote && (
+                                <div className="text-teal-300/90 pl-3">
+                                  <strong>English Translation:</strong> “
+                                  {seg.englishTranslation}”
+                                </div>
+                              )}
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  insertCitationTag(
+                                    `“${seg.englishTranslation || seg.verbatimQuote}” — ${seg.speaker} [Citation: ${transcriptData.title}, Timestamp ${seg.timestamp}]`
+                                  );
+                                  setWorkflowStep("write_publish");
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                <Quote className="w-3 h-3" />+ Cite Interview Quote in Story
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

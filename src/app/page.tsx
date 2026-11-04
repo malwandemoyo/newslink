@@ -35,6 +35,7 @@ import {
 import ResourceDispatchView from "@/components/ResourceDispatchView";
 import InvestigationWorkspaceView from "@/components/InvestigationWorkspaceView";
 import SecurityAuditView from "@/components/SecurityAuditView";
+import GeographicMap from "@/components/GeographicMap";
 import {
   LayoutDashboard,
   Camera,
@@ -130,6 +131,46 @@ export default function ConnectedNewsroomApp() {
     "Masvingo Mirror Community Radio"
   );
   const [newOrgCity, setNewOrgCity] = useState("Bulawayo");
+  const [loadingAiRecs, setLoadingAiRecs] = useState(false);
+  const [aiRecs, setAiRecs] = useState<{
+    modelUsed: string;
+    strategicBrief: string;
+    recommendedResources: Array<{
+      resourceId: string;
+      title: string;
+      city: string;
+      rateUsd: number;
+      matchReason: string;
+    }>;
+    recommendedExperts: Array<{
+      expertId: string;
+      name: string;
+      role: string;
+      city: string;
+      matchReason: string;
+    }>;
+  } | null>(null);
+
+  const runAiRecommendations = async () => {
+    setLoadingAiRecs(true);
+    try {
+      const res = await fetch("/api/ai/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          investigationId: selectedInvestigationId,
+          activeOrgId,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiRecs(data);
+        triggerToast("Gemini 3.8 Flash matched equipment & specialists!");
+      }
+    } finally {
+      setLoadingAiRecs(false);
+    }
+  };
 
   const activeOrg =
     organisations.find((o) => o.id === activeOrgId) || organisations[0];
@@ -631,6 +672,121 @@ export default function ConnectedNewsroomApp() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* LIVE GEOSPATIAL NETWORK MAP (Newsrooms, Equipment, Specialists & Active Broadcasts) */}
+              <GeographicMap
+                organisations={organisations}
+                resources={resources}
+                broadcasts={dispatchBroadcasts}
+                experts={experts}
+                selectedCity={selectedCity}
+                onSelectCity={setSelectedCity}
+                onRequestResource={() => setActiveNav("resources")}
+                onSelectBroadcast={() => setActiveNav("resources")}
+                onInviteExpert={(exp) => handleInviteExpert(exp)}
+              />
+
+              {/* AI RESOURCE & COLLABORATOR MATCHMAKER (Section 3 Module 5 of Original Prompt) */}
+              <div className="rounded-2xl border border-teal-500/30 bg-[#0f172a] p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                      AI Newsroom Assistant • Resource & Collaborator Matchmaker
+                    </span>
+                    <h3 className="text-base font-bold text-white mt-0.5">
+                      Gemini 3.8 Flash Recommendations for Active Investigation
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Automatically matches idle partner equipment and specialist journalists across the network to your investigation’s verification needs.
+                    </p>
+                  </div>
+                  <button
+                    onClick={runAiRecommendations}
+                    disabled={loadingAiRecs}
+                    className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {loadingAiRecs
+                      ? "Matching Gear & Specialists via Gemini..."
+                      : "✨ Recommend Gear & Collaborators (Gemini AI)"}
+                  </button>
+                </div>
+
+                {aiRecs && (
+                  <div className="space-y-4 pt-2 border-t border-slate-800 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/30 text-teal-300">
+                      <strong>Strategy ({aiRecs.modelUsed}):</strong>{" "}
+                      <span className="text-slate-200">
+                        {aiRecs.strategicBrief}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2.5">
+                        <div className="font-bold text-amber-300 uppercase tracking-wider">
+                          Recommended Partner Equipment
+                        </div>
+                        {aiRecs.recommendedResources.map((rec) => (
+                          <div
+                            key={rec.resourceId}
+                            className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                          >
+                            <div>
+                              <div className="font-bold text-white">
+                                {rec.title} ({rec.city} • ${rec.rateUsd}/day)
+                              </div>
+                              <p className="text-slate-400 mt-0.5">
+                                {rec.matchReason}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setActiveNav("resources")}
+                              className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shrink-0 cursor-pointer"
+                            >
+                              Book →
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <div className="font-bold text-teal-300 uppercase tracking-wider">
+                          Recommended Specialist Collaborators
+                        </div>
+                        {aiRecs.recommendedExperts.map((rec) => {
+                          const expObj = experts.find(
+                            (e) => e.id === rec.expertId
+                          );
+                          return (
+                            <div
+                              key={rec.expertId}
+                              className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                            >
+                              <div>
+                                <div className="font-bold text-white">
+                                  {rec.name} • {rec.role} ({rec.city})
+                                </div>
+                                <p className="text-slate-400 mt-0.5">
+                                  {rec.matchReason}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (expObj) handleInviteExpert(expObj);
+                                  else setActiveNav("expertise");
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold shrink-0 cursor-pointer"
+                              >
+                                Invite →
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Needed From Your Desk (Live Offers & Approvals) */}

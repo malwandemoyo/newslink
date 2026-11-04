@@ -19,6 +19,7 @@ interface GeographicMapProps {
   onSelectCity: (city: string) => void;
   onRequestResource?: (resource: Resource) => void;
   onSelectBroadcast?: (broadcast: DispatchBroadcast) => void;
+  onInviteExpert?: (expert: JournalistProfile) => void;
 }
 
 const CITY_VIEWPORTS: Record<
@@ -40,6 +41,7 @@ export default function GeographicMap({
   onSelectCity,
   onRequestResource,
   onSelectBroadcast,
+  onInviteExpert,
 }: GeographicMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<LeafletNS.Map | null>(null);
@@ -207,6 +209,73 @@ export default function GeographicMap({
         if (onRequestResource && res.status === "Available") {
           onRequestResource(res);
         }
+      });
+    });
+
+    // 3. Draw Newsroom Hub Markers
+    organisations.forEach((org) => {
+      if (selectedCity !== "All" && org.city !== selectedCity) return;
+      const orgIcon = L.divIcon({
+        className: "custom-org-icon",
+        html: `<div style="display:flex;align-items:center;gap:4px;background:#0ea5e9;color:#020617;font-weight:800;font-size:10px;padding:3px 8px;border-radius:999px;border:2px solid #e0f2fe;box-shadow:0 4px 10px rgba(14,165,233,0.5);white-space:nowrap;">
+          <span>🏛️ ${org.shortName}</span>
+        </div>`,
+        iconSize: [110, 24],
+        iconAnchor: [55, 12],
+      });
+
+      const marker = L.marker([org.coordinates.lat, org.coordinates.lng], {
+        icon: orgIcon,
+      }).addTo(group);
+
+      marker.bindPopup(`
+        <div style="min-width:200px;font-size:12px;line-height:1.4;">
+          <div style="font-size:10px;font-family:monospace;color:#38bdf8;font-weight:700;">
+            ${org.type} • ${org.city}
+          </div>
+          <div style="font-weight:700;margin-top:2px;color:#fff;">${org.name}</div>
+          <div style="color:#cbd5e1;font-size:11px;margin-top:4px;">
+            Specialties: ${org.specialties.join(", ")}
+          </div>
+        </div>
+      `);
+    });
+
+    // 4. Draw Specialist Journalist Markers
+    experts.forEach((exp, idx) => {
+      if (selectedCity !== "All" && exp.city !== selectedCity) return;
+      const latOffset = ((idx % 2) + 1) * -0.0042;
+      const lngOffset = ((idx % 3) - 1) * 0.0042;
+
+      const expIcon = L.divIcon({
+        className: "custom-exp-icon",
+        html: `<div style="display:flex;align-items:center;gap:4px;background:#a855f7;color:#fff;font-weight:700;font-size:10px;padding:2px 7px;border-radius:6px;border:1px solid #f3e8ff;box-shadow:0 4px 10px rgba(168,85,247,0.4);white-space:nowrap;">
+          <span>👤 ${exp.name.split(" ")[0]}</span>
+        </div>`,
+        iconSize: [78, 22],
+        iconAnchor: [39, 11],
+      });
+
+      const marker = L.marker(
+        [exp.coordinates.lat + latOffset, exp.coordinates.lng + lngOffset],
+        { icon: expIcon }
+      ).addTo(group);
+
+      marker.bindPopup(`
+        <div style="min-width:200px;font-size:12px;line-height:1.4;">
+          <div style="font-size:10px;font-family:monospace;color:#c084fc;font-weight:700;">
+            ${exp.role} • ${exp.availability}
+          </div>
+          <div style="font-weight:700;margin-top:2px;color:#fff;">${exp.name}</div>
+          <div style="color:#cbd5e1;font-size:11px;margin-top:4px;">
+            Skills: ${exp.skills.join(", ")}<br/>
+            Languages: <strong>${exp.languages.join(", ")}</strong>
+          </div>
+        </div>
+      `);
+
+      marker.on("click", () => {
+        if (onInviteExpert) onInviteExpert(exp);
       });
     });
   }
