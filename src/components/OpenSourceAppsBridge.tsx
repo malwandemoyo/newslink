@@ -85,7 +85,7 @@ export default function OpenSourceAppsBridge({
                 onClick={() => setEmbeddedApp(null)}
                 className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="size-4" />
               </button>
             </div>
           </div>

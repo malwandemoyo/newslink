@@ -164,7 +164,7 @@ export default function KanbanBoard({
           onClick={() => setShowAddForm(!showAddForm)}
           className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="size-3.5" />
           New Investigation Task
         </button>
       </div>
@@ -521,7 +521,7 @@ export default function KanbanBoard({
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-teal-500 text-slate-950 font-bold flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="size-3.5" />
                   Log Note
                 </button>
               </div>

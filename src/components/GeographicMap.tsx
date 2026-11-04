@@ -29,20 +29,20 @@ const MAP_TILE_STYLES: Record<
   { label: string; url: string; attribution: string; subdomains?: string }
 > = {
   street: {
-    label: "🗺️ Street Map",
+    label: "Street",
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
   dark: {
-    label: "🌙 Dark Map",
+    label: "Dark",
     url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
     subdomains: "abcd",
   },
   satellite: {
-    label: "🛰️ Satellite",
+    label: "Satellite",
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
   },
@@ -75,7 +75,6 @@ export default function GeographicMap({
   const layerGroupRef = useRef<LeafletNS.LayerGroup | null>(null);
   const [mapStyle, setMapStyle] = useState<MapStyleId>("street");
 
-  // Initialize Leaflet map once on mount
   useEffect(() => {
     let isMounted = true;
 
@@ -120,7 +119,6 @@ export default function GeographicMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Switch basemap tiles when mapStyle changes
   useEffect(() => {
     async function updateBasemap() {
       const map = mapInstanceRef.current;
@@ -139,7 +137,6 @@ export default function GeographicMap({
     updateBasemap();
   }, [mapStyle]);
 
-  // Fly to city when selectedCity changes
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -147,7 +144,6 @@ export default function GeographicMap({
     map.flyTo(target.center, target.zoom, { duration: 0.9 });
   }, [selectedCity]);
 
-  // Re-render markers and dispatch radius circles when data changes
   useEffect(() => {
     async function updateLayers() {
       if (!mapInstanceRef.current || !layerGroupRef.current) return;
@@ -163,10 +159,9 @@ export default function GeographicMap({
     if (!group) return;
     group.clearLayers();
 
-    // Scale marker spread so pins don't stack on top of each other at national zoom (6x)
     const spreadScale = selectedCity === "All" ? 0.22 : 0.0055;
 
-    // 1. Draw inDrive-style Dispatch Broadcast Radius Rings & Markers
+    // 1. Dispatch Broadcast Radius Rings & Markers
     broadcasts.forEach((b, idx) => {
       if (selectedCity !== "All" && b.city !== selectedCity) return;
 
@@ -174,19 +169,19 @@ export default function GeographicMap({
         radius: selectedCity === "All" ? b.radiusKm * 900 : b.radiusKm * 220,
         color: b.status === "Matched & Dispatched" ? "#10b981" : "#f59e0b",
         fillColor: b.status === "Matched & Dispatched" ? "#10b981" : "#f59e0b",
-        fillOpacity: 0.14,
-        weight: 2,
+        fillOpacity: 0.12,
+        weight: 1.5,
         dashArray: "5, 5",
       }).addTo(group);
 
       const broadcastIcon = L.divIcon({
         className: "custom-dispatch-icon",
-        html: `<div style="display:flex;align-items:center;gap:4px;background:#f59e0b;color:#020617;font-weight:800;font-size:10px;padding:3px 8px;border-radius:999px;border:2px solid #fef3c7;box-shadow:0 4px 12px rgba(0,0,0,0.65);white-space:nowrap;">
-          <span>📡 NEED</span>
-          <span>$${b.offeredRateUsd}/d</span>
+        html: `<div style="display:inline-flex;align-items:center;gap:5px;background:#0f1113;color:#fde68a;font-weight:600;font-size:11px;padding:3px 8px;border-radius:6px;border:1.5px solid #f59e0b;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;font-variant-numeric:tabular-nums;">
+          <span style="width:6px;height:6px;border-radius:999px;background:#f59e0b;display:inline-block;"></span>
+          <span>Need · $${b.offeredRateUsd}/d</span>
         </div>`,
-        iconSize: [90, 24],
-        iconAnchor: [45, 12],
+        iconSize: [96, 24],
+        iconAnchor: [48, 12],
       });
 
       const marker = L.marker(
@@ -198,15 +193,15 @@ export default function GeographicMap({
       ).addTo(group);
 
       marker.bindPopup(`
-        <div style="min-width:210px;font-size:12px;line-height:1.4;color:#0f172a;">
-          <div style="font-size:10px;font-family:monospace;color:#d97706;font-weight:700;">
-            inDrive Field Broadcast • ${b.urgency}
+        <div style="min-width:210px;font-size:12px;line-height:1.45;color:#0f172a;">
+          <div style="font-size:11px;color:#b45309;font-weight:600;">
+            Field dispatch · ${b.urgency}
           </div>
-          <div style="font-weight:700;margin-top:3px;color:#0f172a;">${b.title}</div>
-          <div style="color:#334155;font-size:11px;margin-top:4px;">
+          <div style="font-weight:600;margin-top:2px;color:#0f172a;">${b.title}</div>
+          <div style="color:#334155;font-size:11px;margin-top:4px;font-variant-numeric:tabular-nums;">
             Window: ${b.neededWindow}<br/>
-            Offer: <strong style="color:#059669;">$${b.offeredRateUsd}/day</strong> (${b.offeredTerms})<br/>
-            Active Bids: <strong>${b.bids.length}</strong>
+            Offer: <strong style="color:#047857;">$${b.offeredRateUsd}/day</strong> (${b.offeredTerms})<br/>
+            Active bids: <strong>${b.bids.length}</strong>
           </div>
         </div>
       `);
@@ -216,7 +211,7 @@ export default function GeographicMap({
       });
     });
 
-    // 2. Draw Equipment Resource Markers
+    // 2. Equipment Resource Markers
     resources.forEach((res, idx) => {
       if (selectedCity !== "All" && res.city !== selectedCity) return;
       const owner = organisations.find((o) => o.id === res.ownerOrgId);
@@ -225,16 +220,17 @@ export default function GeographicMap({
       const lngOffset = Math.cos(angle) * spreadScale;
 
       const isAvail = res.status === "Available";
-      const bg = isAvail ? "#0d9488" : "#475569";
+      const borderColor = isAvail ? "#14b8a6" : "#64748b";
+      const dotColor = isAvail ? "#2dd4bf" : "#94a3b8";
 
       const gearIcon = L.divIcon({
         className: "custom-gear-icon",
-        html: `<div style="display:flex;align-items:center;gap:4px;background:${bg};color:#ffffff;font-weight:700;font-size:10px;padding:3px 7px;border-radius:6px;border:1.5px solid #99f6e4;box-shadow:0 4px 10px rgba(0,0,0,0.55);white-space:nowrap;">
-          <span>🎥 ${res.city}</span>
-          <span>${res.suggestedRateUsd === 0 ? "FREE" : `$${res.suggestedRateUsd}`}</span>
+        html: `<div style="display:inline-flex;align-items:center;gap:5px;background:#0f1113;color:#f1f5f9;font-weight:600;font-size:11px;padding:3px 8px;border-radius:6px;border:1.5px solid ${borderColor};box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;font-variant-numeric:tabular-nums;">
+          <span style="width:6px;height:6px;border-radius:999px;background:${dotColor};display:inline-block;"></span>
+          <span>${res.city} · ${res.suggestedRateUsd === 0 ? "Free" : `$${res.suggestedRateUsd}`}</span>
         </div>`,
-        iconSize: [86, 24],
-        iconAnchor: [43, 12],
+        iconSize: [92, 24],
+        iconAnchor: [46, 12],
       });
 
       const marker = L.marker(
@@ -243,14 +239,14 @@ export default function GeographicMap({
       ).addTo(group);
 
       marker.bindPopup(`
-        <div style="min-width:210px;font-size:12px;line-height:1.4;color:#0f172a;">
-          <div style="font-size:10px;font-family:monospace;color:#0d9488;font-weight:700;">
-            ${res.category} • SN: ${res.serialNumber}
+        <div style="min-width:210px;font-size:12px;line-height:1.45;color:#0f172a;">
+          <div style="font-size:11px;color:#0f766e;font-weight:600;">
+            ${res.category} · ${res.serialNumber}
           </div>
-          <div style="font-weight:700;margin-top:2px;color:#0f172a;">${res.title}</div>
-          <div style="color:#334155;font-size:11px;margin-top:4px;">
+          <div style="font-weight:600;margin-top:2px;color:#0f172a;">${res.title}</div>
+          <div style="color:#334155;font-size:11px;margin-top:4px;font-variant-numeric:tabular-nums;">
             Owner: <strong>${owner?.shortName || res.ownerOrgId}</strong><br/>
-            Status: <strong>${res.status}</strong> • Rate: <strong>$${res.suggestedRateUsd}/day</strong>
+            Status: <strong>${res.status}</strong> · Rate: <strong>$${res.suggestedRateUsd}/day</strong>
           </div>
         </div>
       `);
@@ -262,17 +258,18 @@ export default function GeographicMap({
       });
     });
 
-    // 3. Draw Newsroom Hub Markers
+    // 3. Newsroom Hub Markers
     organisations.forEach((org, idx) => {
       if (selectedCity !== "All" && org.city !== selectedCity) return;
       const latOffset = idx % 2 === 0 ? spreadScale * 0.35 : -spreadScale * 0.35;
       const orgIcon = L.divIcon({
         className: "custom-org-icon",
-        html: `<div style="display:flex;align-items:center;gap:4px;background:#0284c7;color:#ffffff;font-weight:800;font-size:10px;padding:3px 8px;border-radius:999px;border:2px solid #e0f2fe;box-shadow:0 4px 10px rgba(0,0,0,0.6);white-space:nowrap;">
-          <span>🏛️ ${org.shortName}</span>
+        html: `<div style="display:inline-flex;align-items:center;gap:5px;background:#0f1113;color:#e0f2fe;font-weight:600;font-size:11px;padding:3px 9px;border-radius:999px;border:1.5px solid #38bdf8;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;">
+          <span style="width:6px;height:6px;border-radius:999px;background:#38bdf8;display:inline-block;"></span>
+          <span>${org.shortName}</span>
         </div>`,
-        iconSize: [114, 24],
-        iconAnchor: [57, 12],
+        iconSize: [112, 24],
+        iconAnchor: [56, 12],
       });
 
       const marker = L.marker(
@@ -281,11 +278,11 @@ export default function GeographicMap({
       ).addTo(group);
 
       marker.bindPopup(`
-        <div style="min-width:200px;font-size:12px;line-height:1.4;color:#0f172a;">
-          <div style="font-size:10px;font-family:monospace;color:#0284c7;font-weight:700;">
-            ${org.type} • ${org.city}
+        <div style="min-width:200px;font-size:12px;line-height:1.45;color:#0f172a;">
+          <div style="font-size:11px;color:#0369a1;font-weight:600;">
+            ${org.type} · ${org.city}
           </div>
-          <div style="font-weight:700;margin-top:2px;color:#0f172a;">${org.name}</div>
+          <div style="font-weight:600;margin-top:2px;color:#0f172a;">${org.name}</div>
           <div style="color:#334155;font-size:11px;margin-top:4px;">
             Specialties: ${org.specialties.join(", ")}
           </div>
@@ -293,7 +290,7 @@ export default function GeographicMap({
       `);
     });
 
-    // 4. Draw Specialist Journalist Markers
+    // 4. Specialist Journalist Markers
     experts.forEach((exp, idx) => {
       if (selectedCity !== "All" && exp.city !== selectedCity) return;
       const angle = ((idx + 0.5) / Math.max(experts.length, 1)) * Math.PI * 2;
@@ -302,11 +299,12 @@ export default function GeographicMap({
 
       const expIcon = L.divIcon({
         className: "custom-exp-icon",
-        html: `<div style="display:flex;align-items:center;gap:4px;background:#7e22ce;color:#ffffff;font-weight:700;font-size:10px;padding:2px 7px;border-radius:6px;border:1.5px solid #f3e8ff;box-shadow:0 4px 10px rgba(0,0,0,0.55);white-space:nowrap;">
-          <span>👤 ${exp.name.split(" ")[0]}</span>
+        html: `<div style="display:inline-flex;align-items:center;gap:5px;background:#0f1113;color:#e2e8f0;font-weight:600;font-size:11px;padding:2px 8px;border-radius:6px;border:1.5px solid #94a3b8;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;">
+          <span style="width:5px;height:5px;border-radius:999px;background:#cbd5e1;display:inline-block;"></span>
+          <span>${exp.name.split(" ")[0]}</span>
         </div>`,
-        iconSize: [80, 22],
-        iconAnchor: [40, 11],
+        iconSize: [78, 22],
+        iconAnchor: [39, 11],
       });
 
       const marker = L.marker(
@@ -315,11 +313,11 @@ export default function GeographicMap({
       ).addTo(group);
 
       marker.bindPopup(`
-        <div style="min-width:200px;font-size:12px;line-height:1.4;color:#0f172a;">
-          <div style="font-size:10px;font-family:monospace;color:#7e22ce;font-weight:700;">
-            ${exp.role} • ${exp.availability}
+        <div style="min-width:200px;font-size:12px;line-height:1.45;color:#0f172a;">
+          <div style="font-size:11px;color:#475569;font-weight:600;">
+            ${exp.role} · ${exp.availability}
           </div>
-          <div style="font-weight:700;margin-top:2px;color:#0f172a;">${exp.name}</div>
+          <div style="font-weight:600;margin-top:2px;color:#0f172a;">${exp.name}</div>
           <div style="color:#334155;font-size:11px;margin-top:4px;">
             Skills: ${exp.skills.join(", ")}<br/>
             Languages: <strong>${exp.languages.join(", ")}</strong>
@@ -334,40 +332,40 @@ export default function GeographicMap({
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
       {/* Map Header Controls */}
-      <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300">
-            <Navigation className="w-4 h-4" />
+      <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-900 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-teal-300">
+            <Navigation className="size-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white flex items-center gap-2">
-              Live Geospatial Network Map (Newsrooms, Gear, Specialists & Field Dispatch)
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              Geospatial Network Map
+              <span className="text-xs font-normal px-2 py-0.5 rounded-md bg-slate-950 text-slate-400 border border-slate-800">
                 {process.env.NEXT_PUBLIC_MAPS_API_KEY
-                  ? "Maps API Key: .env Active"
-                  : "OpenStreetMap + Leaflet"}
+                  ? "Maps API active"
+                  : "OpenStreetMap"}
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              Click any <span className="text-amber-300 font-medium">📡 NEED</span> marker to bid, <span className="text-teal-300 font-medium">🎥 Gear</span> to book, or <span className="text-purple-300 font-medium">👤 Specialist</span> to invite
+              Select a field request to bid, equipment pin to book, or specialist pin to invite.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Map Tile Style Switcher */}
-          <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-lg border border-slate-800">
-            <Layers className="w-3.5 h-3.5 text-slate-400 ml-1" />
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+            <Layers className="size-3.5 text-slate-400 ml-1.5 mr-0.5" />
             {(["street", "dark", "satellite"] as const).map((styleId) => (
               <button
                 key={styleId}
                 onClick={() => setMapStyle(styleId)}
-                className={`px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                   mapStyle === styleId
-                    ? "bg-sky-500 text-slate-950 font-semibold"
-                    : "text-slate-300 hover:bg-slate-800"
+                    ? "bg-slate-800 text-slate-100"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {MAP_TILE_STYLES[styleId].label}
@@ -376,18 +374,18 @@ export default function GeographicMap({
           </div>
 
           {/* City FlyTo Controls */}
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
             {(["All", "Bulawayo", "Harare", "Mutare"] as const).map((city) => (
               <button
                 key={city}
                 onClick={() => onSelectCity(city)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                   selectedCity === city
-                    ? "bg-teal-500 text-slate-950 font-semibold"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    ? "bg-teal-400 text-slate-950 font-semibold"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {city === "All" ? "All Zimbabwe (6x)" : `${city} Hub (13x)`}
+                {city === "All" ? "All Zimbabwe" : city}
               </button>
             ))}
           </div>
@@ -399,18 +397,18 @@ export default function GeographicMap({
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
         {/* Map Legend Overlay */}
-        <div className="absolute bottom-3 left-3 z-20 bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 flex flex-wrap items-center gap-4 shadow-lg pointer-events-none">
+        <div className="absolute bottom-3 left-3 z-20 bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 flex flex-wrap items-center gap-4 shadow-sm pointer-events-none tabular-nums">
           <span className="flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 text-amber-400" />
-            <span>📡 Field Broadcast Radius</span>
+            <Radio className="size-3.5 text-amber-400" />
+            <span>Field requests ({broadcasts.length})</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <Camera className="w-3.5 h-3.5 text-teal-400" />
-            <span>🎥 Available Equipment ({resources.length})</span>
+            <Camera className="size-3.5 text-teal-400" />
+            <span>Equipment ({resources.length})</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-sky-400" />
-            <span>🏛️ Newsrooms ({organisations.length}) & 👤 Specialists ({experts.length})</span>
+            <Users className="size-3.5 text-sky-400" />
+            <span>Newsrooms ({organisations.length}) &amp; Specialists ({experts.length})</span>
           </span>
         </div>
       </div>

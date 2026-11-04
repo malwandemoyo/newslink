@@ -274,7 +274,7 @@ export default function ResourceDispatchView({
             onClick={() => setShowMap(!showMap)}
             className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-2 cursor-pointer transition"
           >
-            <Map className="w-4 h-4 text-teal-400" />
+            <Map className="size-4 text-teal-400" />
             {showMap ? "Hide Map" : "Show Map"}
           </button>
 
@@ -282,14 +282,14 @@ export default function ResourceDispatchView({
             onClick={() => setShowListGearModal(!showListGearModal)}
             className="px-4 py-2 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
           >
-            <Camera className="w-4 h-4" />+ List Camera / Gear (AI Priced)
+            <Camera className="size-4" />+ List Camera / Gear (AI Priced)
           </button>
 
           <button
             onClick={() => setShowBroadcastModal(true)}
             className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Post Urgent Field Need
           </button>
         </div>
@@ -319,7 +319,7 @@ export default function ResourceDispatchView({
         >
           <div className="flex items-center justify-between">
             <span className="font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-400" />
+              <Sparkles className="size-4 text-teal-400" />
               List Newsroom Equipment (Gemini 3.8 Flash Calculates Fair Peer-to-Peer Rate)
             </span>
             <button
@@ -430,7 +430,7 @@ export default function ResourceDispatchView({
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="size-4" />
             1. Browse Equipment ({resources.length})
           </button>
 
@@ -442,7 +442,7 @@ export default function ResourceDispatchView({
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <Radio className="w-4 h-4" />
+            <Radio className="size-4" />
             2. Urgent Field Requests & Bids ({broadcasts.length})
           </button>
 
@@ -454,7 +454,7 @@ export default function ResourceDispatchView({
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <ClipboardCheck className="w-4 h-4" />
+            <ClipboardCheck className="size-4" />
             3. My Bookings & Handover PINs ({resourceRequests.length})
           </button>
         </div>
@@ -545,7 +545,7 @@ export default function ResourceDispatchView({
 
                       <div className="flex items-center justify-between text-xs text-slate-300 pt-1">
                         <span className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                          <MapPin className="size-3.5 text-teal-400" />
                           {owner?.shortName} ({res.city})
                         </span>
                         <span className="font-bold text-sm text-white">
@@ -569,7 +569,7 @@ export default function ResourceDispatchView({
 
                       <div className="flex items-center justify-between text-xs text-slate-400">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
+                          <Calendar className="size-3.5" />
                           {res.availableWindow}
                         </span>
                         <span className="text-emerald-400 font-medium">
@@ -668,7 +668,7 @@ export default function ResourceDispatchView({
                   {b.handoverPin && (
                     <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between">
                       <span className="text-xs text-emerald-200 font-semibold flex items-center gap-2">
-                        <KeyRound className="w-4 h-4 text-emerald-400" />
+                        <KeyRound className="size-4 text-emerald-400" />
                         Matched! Show Handover PIN at Pickup:
                       </span>
                       <span className="font-mono font-semibold text-base px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
@@ -757,7 +757,7 @@ export default function ResourceDispatchView({
                     }}
                     className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow"
                   >
-                    <ArrowLeftRight className="w-4 h-4" />
+                    <ArrowLeftRight className="size-4" />
                     Send Offer or Counter-Bid as {activeOrg.shortName}
                   </button>
                 )}
@@ -818,7 +818,7 @@ export default function ResourceDispatchView({
 
                   {req.counterOfferTerms && (
                     <div className="text-xs text-amber-300 bg-amber-950/30 border border-amber-500/30 px-3 py-2 rounded-xl">
-                      ⚡ Owner Counter-Offer (${req.counterRateUsd}/day):{" "}
+                      Owner Counter-Offer (${req.counterRateUsd}/day):{" "}
                       {req.counterOfferTerms}
                     </div>
                   )}
@@ -1314,7 +1314,7 @@ export default function ResourceDispatchView({
                   type="checkbox"
                   checked={chkSerial}
                   onChange={(e) => setChkSerial(e.target.checked)}
-                  className="rounded accent-teal-500 w-4 h-4"
+                  className="rounded accent-teal-500 size-4"
                 />
                 <span className="text-slate-200">
                   Serial Number & Lenses Inspected (Clean / Working)
@@ -1326,7 +1326,7 @@ export default function ResourceDispatchView({
                   type="checkbox"
                   checked={chkBattery}
                   onChange={(e) => setChkBattery(e.target.checked)}
-                  className="rounded accent-teal-500 w-4 h-4"
+                  className="rounded accent-teal-500 size-4"
                 />
                 <span className="text-slate-200">
                   Batteries Charged & Media Cards Ready

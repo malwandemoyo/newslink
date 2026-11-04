@@ -359,7 +359,7 @@ export default function ConnectedNewsroomApp() {
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900/95 backdrop-blur border border-slate-700 text-slate-100 pl-4 pr-5 py-3.5 rounded-xl shadow-2xl shadow-black/50 flex items-center gap-3">
           <span className="w-7 h-7 rounded-full bg-teal-500/15 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-teal-400" />
+            <CheckCircle2 className="size-4 text-teal-400" />
           </span>
           <span className="text-sm font-medium leading-snug">
             {toastMessage}
@@ -444,7 +444,7 @@ export default function ConnectedNewsroomApp() {
                   )}
                   <span className="flex items-center gap-3">
                     <Icon
-                      className={`w-4 h-4 ${
+                      className={`size-4 ${
                         isActive ? "text-teal-300" : "text-slate-500"
                       }`}
                     />
@@ -471,7 +471,7 @@ export default function ConnectedNewsroomApp() {
         <div className="p-4 space-y-3">
           <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-1.5">
             <div className="flex items-center gap-1.5 text-teal-300 font-semibold">
-              <ShieldCheck className="w-4 h-4" />
+              <ShieldCheck className="size-4" />
               Journalists in Control
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -483,7 +483,7 @@ export default function ConnectedNewsroomApp() {
             onClick={handleResetDatabase}
             className="w-full py-2 px-3 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 text-xs flex items-center justify-center gap-2 transition cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="size-3.5" />
             Reset Demo Data
           </button>
         </div>
@@ -513,7 +513,7 @@ export default function ConnectedNewsroomApp() {
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <Building2 className={`w-3.5 h-3.5 ${isCurrent ? "text-teal-300" : ""}`} />
+                  <Building2 className={`size-3.5 ${isCurrent ? "text-teal-300" : ""}`} />
                   {org.shortName}
                   <span className="text-xs font-normal text-slate-500">{org.city}</span>
                 </button>
@@ -565,7 +565,7 @@ export default function ConnectedNewsroomApp() {
                   }`}
                 >
                   <span
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                    className={`size-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
                       st.done
                         ? "bg-emerald-500/15 text-emerald-300"
                         : activeNav === st.nav
@@ -573,7 +573,7 @@ export default function ConnectedNewsroomApp() {
                         : "bg-slate-800 text-slate-400 ring-1 ring-slate-700"
                     }`}
                   >
-                    {st.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : st.num}
+                    {st.done ? <CheckCircle2 className="size-3.5" /> : st.num}
                   </span>
                   {st.label.replace(/^\d\.\s/, "")}
                 </button>
@@ -707,53 +707,51 @@ export default function ConnectedNewsroomApp() {
               />
 
               {/* AI RESOURCE & COLLABORATOR MATCHMAKER (Section 3 Module 5 of Original Prompt) */}
-              <div className="rounded-2xl border border-teal-500/30 bg-slate-900 p-6 space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-bold text-teal-400">
-                      AI Newsroom Assistant • Resource & Collaborator Matchmaker
+                    <span className="text-xs font-semibold text-teal-300">
+                      AI Newsroom Assistant
                     </span>
-                    <h3 className="text-base font-bold text-white mt-0.5">
-                      Gemini 3.8 Flash Recommendations for Active Investigation
+                    <h3 className="text-base font-semibold text-slate-100 mt-0.5">
+                      Resource &amp; Collaborator Matchmaker
                     </h3>
                     <p className="text-xs text-slate-400">
-                      Automatically matches idle partner equipment and specialist journalists across the network to your investigation’s verification needs.
+                      Matches available partner equipment and specialist journalists across the network to your active investigation.
                     </p>
                   </div>
                   <button
                     onClick={runAiRecommendations}
                     disabled={loadingAiRecs}
-                    className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
+                    className="px-4 py-2.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs flex items-center gap-2 cursor-pointer shrink-0"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="size-4" />
                     {loadingAiRecs
-                      ? "Matching Gear & Specialists via Gemini..."
-                      : "✨ Recommend Gear & Collaborators (Gemini AI)"}
+                      ? "Matching gear and specialists..."
+                      : "Recommend Gear & Collaborators"}
                   </button>
                 </div>
 
                 {aiRecs && (
-                  <div className="space-y-4 pt-2 border-t border-slate-800 text-xs">
-                    <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/30 text-teal-300">
-                      <strong>Strategy ({aiRecs.modelUsed}):</strong>{" "}
-                      <span className="text-slate-200">
-                        {aiRecs.strategicBrief}
-                      </span>
+                  <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+                      <strong className="text-teal-300">Strategy ({aiRecs.modelUsed}):</strong>{" "}
+                      <span>{aiRecs.strategicBrief}</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2.5">
-                        <div className="font-bold text-amber-300">
+                        <div className="font-semibold text-slate-200">
                           Recommended Partner Equipment
                         </div>
                         {aiRecs.recommendedResources.map((rec) => (
                           <div
                             key={rec.resourceId}
-                            className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                            className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
                           >
                             <div>
-                              <div className="font-bold text-white">
-                                {rec.title} ({rec.city} • ${rec.rateUsd}/day)
+                              <div className="font-semibold text-slate-100 tabular-nums">
+                                {rec.title} ({rec.city} · ${rec.rateUsd}/day)
                               </div>
                               <p className="text-slate-400 mt-0.5">
                                 {rec.matchReason}
@@ -761,7 +759,7 @@ export default function ConnectedNewsroomApp() {
                             </div>
                             <button
                               onClick={() => setActiveNav("resources")}
-                              className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shrink-0 cursor-pointer"
+                              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold shrink-0 cursor-pointer"
                             >
                               Book
                             </button>
@@ -770,7 +768,7 @@ export default function ConnectedNewsroomApp() {
                       </div>
 
                       <div className="space-y-2.5">
-                        <div className="font-bold text-teal-300">
+                        <div className="font-semibold text-slate-200">
                           Recommended Specialist Collaborators
                         </div>
                         {aiRecs.recommendedExperts.map((rec) => {
@@ -780,11 +778,11 @@ export default function ConnectedNewsroomApp() {
                           return (
                             <div
                               key={rec.expertId}
-                              className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                              className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
                             >
                               <div>
-                                <div className="font-bold text-white">
-                                  {rec.name} • {rec.role} ({rec.city})
+                                <div className="font-semibold text-slate-100">
+                                  {rec.name} · {rec.role} ({rec.city})
                                 </div>
                                 <p className="text-slate-400 mt-0.5">
                                   {rec.matchReason}
@@ -795,7 +793,7 @@ export default function ConnectedNewsroomApp() {
                                   if (expObj) handleInviteExpert(expObj);
                                   else setActiveNav("expertise");
                                 }}
-                                className="px-3 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold shrink-0 cursor-pointer"
+                                className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold shrink-0 cursor-pointer"
                               >
                                 Invite
                               </button>
@@ -834,7 +832,7 @@ export default function ConnectedNewsroomApp() {
                       {b.handoverPin && (
                         <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between text-xs">
                           <span className="text-emerald-200 font-semibold flex items-center gap-2">
-                            <KeyRound className="w-4 h-4 text-emerald-400" />
+                            <KeyRound className="size-4 text-emerald-400" />
                             Crew Dispatched! Handover PIN:
                           </span>
                           <span className="font-mono font-semibold text-sm px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
@@ -1138,7 +1136,7 @@ export default function ConnectedNewsroomApp() {
 
                 <div className="flex flex-wrap items-center gap-2.5">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+                    <Search className="size-4 text-slate-400 absolute left-3.5 top-2.5" />
                     <input
                       type="text"
                       value={skillFilter}
@@ -1211,7 +1209,7 @@ export default function ConnectedNewsroomApp() {
                           </div>
 
                           <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                            <MapPin className="size-3.5 text-teal-400" />
                             {org?.name} ({exp.city})
                           </div>
 
@@ -1241,7 +1239,7 @@ export default function ConnectedNewsroomApp() {
                         <div className="pt-3 border-t border-slate-800">
                           {isCollaborating ? (
                             <div className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
-                              <CheckCircle2 className="w-4 h-4" />
+                              <CheckCircle2 className="size-4" />
                               Collaborating on Umzingwane Story
                             </div>
                           ) : (
@@ -1388,7 +1386,7 @@ export default function ConnectedNewsroomApp() {
                             {story.licenseType}
                           </span>
                           <span className="text-xs text-emerald-300 flex items-center gap-1.5 font-semibold">
-                            <FileCheck className="w-4 h-4" />
+                            <FileCheck className="size-4" />
                             {story.embargoLift}
                           </span>
                         </div>
@@ -1455,24 +1453,30 @@ export default function ConnectedNewsroomApp() {
                 })}
               </div>
 
-              {/* Full Story Reader Modal */}
+                  {/* Full Story Reader Modal */}
               {readingStory && (
-                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-                  <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-teal-500/50 bg-slate-900 p-6 flex flex-col justify-between gap-4 shadow-2xl">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="story-reader-title"
+                  className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+                >
+                  <div className="w-full max-w-2xl max-h-[85dvh] rounded-2xl border border-slate-700 bg-slate-900 p-6 flex flex-col justify-between gap-4 shadow-xl">
                     <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
                       <div>
-                        <span className="text-xs font-semibold text-teal-400">
+                        <span className="text-xs font-semibold text-teal-300">
                           {readingStory.licenseType}
                         </span>
-                        <h3 className="text-lg font-bold text-white mt-1">
+                        <h3 id="story-reader-title" className="text-lg font-semibold text-slate-100 mt-1">
                           {readingStory.title}
                         </h3>
                       </div>
                       <button
                         onClick={() => setReadingStory(null)}
-                        className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                        aria-label="Close story reader"
+                        className="px-2.5 py-1 rounded-md bg-slate-800 text-xs text-slate-300 hover:text-white cursor-pointer"
                       >
-                        Close ✕
+                        Close
                       </button>
                     </div>
 

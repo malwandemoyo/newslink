@@ -213,7 +213,7 @@ export default function AICopilotView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30">
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="size-5" />
           </div>
           <div>
             <h2 className="text-base font-bold text-white">
@@ -240,7 +240,7 @@ export default function AICopilotView({
             onClick={() => setShowUploadModal(!showUploadModal)}
             className="px-4 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow shrink-0"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="size-4" />
             Upload Document
           </button>
         </div>
@@ -254,7 +254,7 @@ export default function AICopilotView({
         >
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <FileUp className="w-4 h-4 text-teal-400" />
+              <FileUp className="size-4 text-teal-400" />
               Add Primary Source Document to Investigation
             </h4>
             <button
@@ -381,7 +381,7 @@ export default function AICopilotView({
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-teal-400 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
+                    <FileText className="size-3.5" />
                     {doc.documentType}
                   </span>
                   {isAllowed ? (
@@ -411,7 +411,7 @@ export default function AICopilotView({
       {/* 403 Permission Block Banner */}
       {errorBanner && (
         <div className="p-4 rounded-2xl border border-rose-500/50 bg-rose-950/30 flex items-start gap-3">
-          <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <ShieldAlert className="size-5 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <h4 className="text-sm font-bold text-rose-200">
               Restricted Document — Access Blocked
@@ -443,7 +443,7 @@ export default function AICopilotView({
                 disabled={loading}
                 className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 shrink-0 cursor-pointer shadow"
               >
-                <Search className="w-4 h-4" />
+                <Search className="size-4" />
                 {loading ? "Searching..." : "Ask Copilot"}
               </button>
             </div>
@@ -477,7 +477,7 @@ export default function AICopilotView({
             <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-teal-400" />
+                  <ShieldCheck className="size-4 text-teal-400" />
                   Source-Grounded Answer
                 </h4>
                 <span className="text-xs text-slate-400">
@@ -493,7 +493,7 @@ export default function AICopilotView({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/15 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="size-4" />
                     Documented Evidence
                   </div>
                   <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
@@ -505,7 +505,7 @@ export default function AICopilotView({
 
                 <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/15 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
-                    <AlertTriangle className="w-4 h-4" />
+                    <AlertTriangle className="size-4" />
                     Unverified Allegations (Needs Corroboration)
                   </div>
                   <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
@@ -523,7 +523,7 @@ export default function AICopilotView({
         <div className="lg:col-span-5 flex flex-col rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <BookOpen className="w-4 h-4 text-teal-400" />
+              <BookOpen className="size-4 text-teal-400" />
               <div>
                 <h4 className="text-sm font-bold text-white">
                   Original Document Passages
@@ -592,13 +592,13 @@ export default function AICopilotView({
                           }}
                           className="px-3 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
                         >
-                          <Quote className="w-3.5 h-3.5" />+ Add Quote & Cite in Story
+                          <Quote className="size-3.5" />+ Add Quote & Cite in Story
                         </button>
                       )}
 
                       {isVerified ? (
                         <span className="text-xs text-emerald-300 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-4 h-4" /> Verified by Journalist
+                          <CheckCircle2 className="size-4" /> Verified by Journalist
                         </span>
                       ) : (
                         <button

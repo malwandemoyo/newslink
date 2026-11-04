@@ -59,7 +59,7 @@ export default function SecurityAuditView({
       <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-lg">
         <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Cpu className="w-5 h-5 text-teal-400" />
+            <Cpu className="size-5 text-teal-400" />
             <div>
               <h2 className="text-sm font-bold text-white">
                 Platform Usage, Cost & 10-Organisation Load Benchmark
@@ -71,14 +71,14 @@ export default function SecurityAuditView({
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-bold text-emerald-300 inline-flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5" /> Monthly Spend: $0.00 (Free Tier)
+              <DollarSign className="size-3.5" /> Monthly Spend: $0.00 (Free Tier)
             </span>
             <button
               onClick={runLiveLoadTest}
               disabled={runningLoadTest}
               className="px-3.5 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow"
             >
-              <Play className="w-3.5 h-3.5" />
+              <Play className="size-3.5" />
               {runningLoadTest
                 ? "Simulating 10 Orgs (50 Users)..."
                 : "Run 10-Org (50-User) Load Test"}
@@ -156,7 +156,7 @@ export default function SecurityAuditView({
             <div className="p-4 rounded-xl border border-teal-500/40 bg-slate-950/90 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Gauge className="w-4 h-4 text-teal-400" />
+                  <Gauge className="size-4 text-teal-400" />
                   <span className="text-xs font-bold text-white">
                     Measured 10-Organisation (50 Concurrent Requests) Stress Test Results
                   </span>
@@ -246,7 +246,7 @@ export default function SecurityAuditView({
           <div className="px-5 pb-5">
             <div className="p-4 rounded-xl bg-amber-950/25 border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <AlertTriangle className="size-5 text-amber-400 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-300 leading-relaxed">
                   <span className="font-bold text-amber-300">
                     10-Organisation Concurrency Assessment:
@@ -267,7 +267,7 @@ export default function SecurityAuditView({
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-teal-400" />
+            <Shield className="size-4 text-teal-400" />
             <h2 className="text-xs font-bold text-white">
               Multi-Organisation Row-Level Security & Workspace Access Control Matrix
             </h2>
@@ -339,7 +339,7 @@ export default function SecurityAuditView({
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
           <span className="text-xs font-bold text-slate-100 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-teal-400" />
+            <Activity className="size-4 text-teal-400" />
             Immutable SQLite Audit Log ({auditLogs.length} Recorded Events)
           </span>
           <span className="text-xs font-mono text-emerald-400">
