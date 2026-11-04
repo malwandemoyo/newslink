@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insertAuditLog } from "@/lib/db";
 
-const GEMINI_API_KEY = (
-  process.env.GEMINI_API_KEY ||
-  "AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw"
-).trim();
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
 export interface TranscriptSegment {

@@ -7,9 +7,11 @@ services:
     ports:
       - "4000:4000"
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - BACKEND_PORT=4000
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
     volumes:
       - newsroom_sqlite:/app/data
@@ -29,10 +31,12 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - BACKEND_URL=http://newsroom-backend:4000
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
     volumes:
       - newsroom_sqlite:/app/data

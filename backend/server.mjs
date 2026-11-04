@@ -5,11 +5,20 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
+// Load .env / .env.local automatically if present
+for (const envFile of [".env", ".env.local"]) {
+  const envPath = path.join(process.cwd(), envFile);
+  if (fs.existsSync(envPath) && typeof process.loadEnvFile === "function") {
+    try {
+      process.loadEnvFile(envPath);
+    } catch {
+      // ignore parse errors
+    }
+  }
+}
+
 const PORT = Number(process.env.BACKEND_PORT || 4000);
-const GEMINI_API_KEY = (
-  process.env.GEMINI_API_KEY ||
-  "AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw"
-).trim();
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
 const DATA_DIR = path.join(process.cwd(), "data");

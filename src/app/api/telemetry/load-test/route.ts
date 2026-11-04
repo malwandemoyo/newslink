@@ -140,10 +140,7 @@ export async function POST() {
   });
 
   // 4. 5 Concurrent Gemini API Grounded Verification Calls
-  const geminiKey = (
-    process.env.GEMINI_API_KEY ||
-    "AQ.Ab8RN6K3gG5aZbZZ3Ck1P0rmU5SGwryQzpaG5cLfrs0uU3FKqw"
-  ).trim();
+  const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
   const geminiModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
   const aiTasks = Array.from({ length: 5 }, async (_, idx) => {
