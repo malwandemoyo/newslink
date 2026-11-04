@@ -195,7 +195,7 @@ export default function InvestigationWorkspaceView({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
               Shared Investigation Workspace
             </span>
             <span className="text-xs text-slate-400">
@@ -329,7 +329,7 @@ export default function InvestigationWorkspaceView({
             onClick={() => onSwitchOrg("org-hre")}
             className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer shadow-lg"
           >
-            Switch to Harare Collective to View Workspace →
+            Switch to Harare Collective to View Workspace
           </button>
         </div>
       ) : (
@@ -819,7 +819,7 @@ export default function InvestigationWorkspaceView({
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-5">
                   <div className="border-b border-slate-800 pb-3 flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-teal-400">
                         GitHub-Style Pull Request Review Gate
                       </span>
                       <h3 className="text-base font-bold text-white mt-0.5">
@@ -943,7 +943,7 @@ export default function InvestigationWorkspaceView({
                   >
                     <Send className="w-4 h-4" />
                     {allGatesApproved
-                      ? "Publish Verified Story to News Wire →"
+                      ? "Publish Verified Story to News Wire"
                       : "Sign Off Remaining Gate Above to Unlock Publish"}
                   </button>
                 </div>

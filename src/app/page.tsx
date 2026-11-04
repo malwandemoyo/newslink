@@ -354,7 +354,7 @@ export default function ConnectedNewsroomApp() {
     currentDraft?.approvals.every((a) => a.approved) ?? false;
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row text-slate-100">
+    <div className="min-h-dvh flex flex-col lg:flex-row text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900/95 backdrop-blur border border-slate-700 text-slate-100 pl-4 pr-5 py-3.5 rounded-xl shadow-2xl shadow-black/50 flex items-center gap-3">
@@ -368,11 +368,11 @@ export default function ConnectedNewsroomApp() {
       )}
 
       {/* Left Sidebar Navigation */}
-      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/70 backdrop-blur flex flex-col justify-between lg:sticky lg:top-0 lg:h-screen">
+      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950 flex flex-col justify-between lg:sticky lg:top-0 lg:h-dvh">
         <div>
           {/* Brand Logo */}
           <div className="px-5 py-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-slate-950 font-serif font-bold text-lg shadow-lg shadow-teal-500/20 ring-1 ring-white/10">
+            <div className="size-10 rounded-lg bg-teal-400 flex items-center justify-center text-slate-950 font-serif font-bold text-lg">
               Cn
             </div>
             <div>
@@ -385,12 +385,8 @@ export default function ConnectedNewsroomApp() {
             </div>
           </div>
 
-          <p className="px-6 pt-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-            Workspace
-          </p>
-
           {/* Primary Navigation */}
-          <nav className="px-3 space-y-0.5">
+          <nav className="px-3 pt-2 space-y-0.5" aria-label="Primary">
             {(
               [
                 {
@@ -498,7 +494,7 @@ export default function ConnectedNewsroomApp() {
         {/* Top Bar: Active Newsroom Switcher + 4-Step Workflow Progress */}
         <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/75 backdrop-blur-xl px-6 py-3 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <span className="text-[11px] font-semibold text-slate-500">
               Viewing as
             </span>
             <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
@@ -592,95 +588,94 @@ export default function ConnectedNewsroomApp() {
           {activeNav === "overview" && (
             <div className="space-y-8">
               {/* Welcome & Active Story Hero Card */}
-              <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-teal-950/40 via-slate-900 to-slate-900 p-6 lg:p-8 shadow-2xl shadow-black/30 space-y-6">
-                <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal-500/10 blur-3xl" />
-                <div className="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="rounded-2xl border border-slate-800 border-t-2 border-t-teal-500 bg-slate-900 p-6 lg:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                   <div className="space-y-3 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-950/60 border border-slate-700/70 text-slate-300 text-xs font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                      Active desk · {activeOrg.name}, {activeOrg.city}
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 text-xs font-medium">
+                      <span className="size-2 rounded-full bg-teal-400" />
+                      Active desk: {activeOrg.name} ({activeOrg.city})
                     </div>
-                    <h2 className="text-3xl lg:text-4xl text-slate-50 leading-tight">
+                    <h2 className="text-3xl lg:text-4xl text-slate-50 leading-tight text-balance">
                       Umzingwane River Water &amp; Lithium Tailings Investigation
                     </h2>
-                    <p className="text-sm text-slate-400 leading-relaxed">
-                      Co-reporting with <strong className="text-slate-200 font-semibold">CITE ZW</strong> and{" "}
-                      <strong className="text-slate-200 font-semibold">Harare Investigative Collective</strong>. Follow the three steps below to borrow field gear, verify the public audit report, and publish to the News Wire.
+                    <p className="text-sm text-slate-300 leading-relaxed text-pretty">
+                      Co-reporting with <strong className="text-slate-100 font-semibold">CITE ZW</strong> and{" "}
+                      <strong className="text-slate-100 font-semibold">Harare Investigative Collective</strong>. Follow the three steps below to borrow field gear, verify the public audit report, and publish to the News Wire.
                     </p>
                   </div>
 
                   <button
                     onClick={() => setActiveNav("investigations")}
-                    className="px-5 py-3 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-sm flex items-center gap-2 shadow-lg shadow-teal-500/20 cursor-pointer shrink-0 transition"
+                    className="px-5 py-3 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-sm flex items-center gap-2 cursor-pointer shrink-0 transition"
                   >
-                    Open Investigation Workspace{" "}
-                    <ArrowRight className="w-4 h-4" />
+                    Open Investigation Workspace
+                    <ArrowRight className="size-4" />
                   </button>
                 </div>
 
                 {/* 3 Clear Workflow Cards right inside the Hero */}
-                <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                   {/* Step Card 1 */}
-                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                  <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                          Step 1 • Field Gear & Crew
+                        <span className="text-xs font-semibold text-teal-300">
+                          Step 1: Field Gear &amp; Crew
                         </span>
-                        <Camera className="w-4 h-4 text-amber-400" />
+                        <Camera className="size-4 text-slate-400" />
                       </div>
-                      <h3 className="text-base font-bold text-white">
-                        Sony FX6 Camera & Field Crew
+                      <h3 className="text-base font-semibold text-slate-100">
+                        Sony FX6 Camera &amp; Field Crew
                       </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        CITE ZW in Bulawayo has offered their 4K Sony FX6 kit + operator for $25/day fuel cover.
+                      <p className="text-xs text-slate-400 leading-relaxed text-pretty">
+                        CITE ZW in Bulawayo has offered their 4K Sony FX6 kit + operator for <span className="tabular-nums">$25/day</span> fuel cover.
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveNav("resources")}
-                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                      className="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
                     >
-                      View Gear & Accept Offer →
+                      View Gear &amp; Accept Offer
                     </button>
                   </div>
 
                   {/* Step Card 2 */}
-                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                  <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
-                          Step 2 • AI Document Research
+                        <span className="text-xs font-semibold text-teal-300">
+                          Step 2: AI Document Research
                         </span>
-                        <BookOpen className="w-4 h-4 text-teal-400" />
+                        <BookOpen className="size-4 text-slate-400" />
                       </div>
-                      <h3 className="text-base font-bold text-white">
+                      <h3 className="text-base font-semibold text-slate-100">
                         Verify 2026 EMA Audit Report
                       </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        Search the 42-page inspection report with exact page citations and distinguish evidence from allegations.
+                      <p className="text-xs text-slate-400 leading-relaxed text-pretty">
+                        Search the <span className="tabular-nums">42-page</span> inspection report with exact page citations and distinguish evidence from allegations.
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveNav("investigations")}
-                      className="w-full py-2.5 px-4 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                      className="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
                     >
-                      Search Documents & Cite →
+                      Search Documents &amp; Cite
                     </button>
                   </div>
 
                   {/* Step Card 3 */}
-                  <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 flex flex-col justify-between gap-4">
+                  <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                          Step 3 • Editorial Sign-Off
+                        <span className="text-xs font-semibold text-teal-300">
+                          Step 3: Editorial Sign-Off
                         </span>
-                        <Share2 className="w-4 h-4 text-emerald-400" />
+                        <Share2 className="size-4 text-slate-400" />
                       </div>
-                      <h3 className="text-base font-bold text-white">
-                        Sign Off & Syndicate Story
+                      <h3 className="text-base font-semibold text-slate-100">
+                        Sign Off &amp; Syndicate Story
                       </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <p className="text-xs text-slate-400 leading-relaxed text-pretty tabular-nums">
                         {
                           currentDraft?.approvals.filter((a) => a.approved)
                             .length
@@ -690,9 +685,9 @@ export default function ConnectedNewsroomApp() {
                     </div>
                     <button
                       onClick={() => setActiveNav("news_exchange")}
-                      className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                      className="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
                     >
-                      Open News Wire ({stories.length} Stories) →
+                      Open News Wire ({stories.length} Stories)
                     </button>
                   </div>
                 </div>
@@ -715,7 +710,7 @@ export default function ConnectedNewsroomApp() {
               <div className="rounded-2xl border border-teal-500/30 bg-slate-900 p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                    <span className="text-xs font-bold text-teal-400">
                       AI Newsroom Assistant • Resource & Collaborator Matchmaker
                     </span>
                     <h3 className="text-base font-bold text-white mt-0.5">
@@ -748,7 +743,7 @@ export default function ConnectedNewsroomApp() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2.5">
-                        <div className="font-bold text-amber-300 uppercase tracking-wider">
+                        <div className="font-bold text-amber-300">
                           Recommended Partner Equipment
                         </div>
                         {aiRecs.recommendedResources.map((rec) => (
@@ -768,14 +763,14 @@ export default function ConnectedNewsroomApp() {
                               onClick={() => setActiveNav("resources")}
                               className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shrink-0 cursor-pointer"
                             >
-                              Book →
+                              Book
                             </button>
                           </div>
                         ))}
                       </div>
 
                       <div className="space-y-2.5">
-                        <div className="font-bold text-teal-300 uppercase tracking-wider">
+                        <div className="font-bold text-teal-300">
                           Recommended Specialist Collaborators
                         </div>
                         {aiRecs.recommendedExperts.map((rec) => {
@@ -802,7 +797,7 @@ export default function ConnectedNewsroomApp() {
                                 }}
                                 className="px-3 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold shrink-0 cursor-pointer"
                               >
-                                Invite →
+                                Invite
                               </button>
                             </div>
                           );
@@ -830,7 +825,7 @@ export default function ConnectedNewsroomApp() {
                       onClick={() => setActiveNav("resources")}
                       className="text-xs text-teal-400 hover:underline font-semibold cursor-pointer"
                     >
-                      See All →
+                      See All
                     </button>
                   </div>
 
@@ -1254,7 +1249,7 @@ export default function ConnectedNewsroomApp() {
                               onClick={() => handleInviteExpert(exp)}
                               className="w-full py-2.5 px-4 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                             >
-                              Invite to Investigation →
+                              Invite to Investigation
                             </button>
                           )}
                         </div>
@@ -1452,7 +1447,7 @@ export default function ConnectedNewsroomApp() {
                           className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                         >
                           Republish in {activeOrg.shortName} (
-                          {story.republishCount}) →
+                          {story.republishCount})
                         </button>
                       </div>
                     </div>
@@ -1501,7 +1496,7 @@ export default function ConnectedNewsroomApp() {
                         }}
                         className="px-5 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs cursor-pointer"
                       >
-                        Republish with Attribution →
+                        Republish with Attribution
                       </button>
                     </div>
                   </div>

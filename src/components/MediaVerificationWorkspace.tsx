@@ -69,7 +69,7 @@ export default function MediaVerificationWorkspace({
       {/* Header & 3-Screenshot Selector Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
             Media Verification Workspace • Misleading Headline vs. Official Audit
           </span>
           <h3 className="text-base font-bold text-white mt-1.5">
@@ -172,7 +172,7 @@ export default function MediaVerificationWorkspace({
                   <Sparkles className="w-4 h-4" />
                   {verifying
                     ? "Running Gemini 3.8 Flash Evidence Check..."
-                    : "Run AI Evidence Check & Open Screen 2 →"}
+                    : "Run AI Evidence Check & Open Screen 2"}
                 </button>
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function MediaVerificationWorkspace({
                     }}
                     className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold cursor-pointer"
                   >
-                    Insert Verdict into Story Draft →
+                    Insert Verdict into Story Draft
                   </button>
                 )}
               </div>

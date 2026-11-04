@@ -423,7 +423,7 @@ export default function KanbanBoard({
           <div className="w-full max-w-xl rounded-2xl border border-teal-500/50 bg-slate-900 p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
-                <span className="text-[11px] font-mono uppercase text-teal-400">
+                <span className="text-[11px] font-mono text-teal-400">
                   Investigation Task & Right-of-Reply Log • Assignee:{" "}
                   {selectedTask.assigneeName}
                 </span>

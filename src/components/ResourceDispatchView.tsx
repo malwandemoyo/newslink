@@ -591,14 +591,14 @@ export default function ResourceDispatchView({
                           }}
                           className="w-full py-2.5 px-4 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
                         >
-                          Request Equipment Booking →
+                          Request Equipment Booking
                         </button>
                       ) : (
                         <button
                           onClick={() => setSubTab("bookings")}
                           className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold cursor-pointer"
                         >
-                          Currently {res.status} — View in Bookings →
+                          Currently {res.status} — View in Bookings
                         </button>
                       )}
                     </div>
@@ -737,7 +737,7 @@ export default function ResourceDispatchView({
                                     }
                                     className="text-xs text-teal-400 hover:underline font-medium cursor-pointer"
                                   >
-                                    Switch to {requester?.shortName} to accept this offer →
+                                    Switch to {requester?.shortName} to accept this offer
                                   </button>
                                 )}
                               </div>
@@ -893,7 +893,7 @@ export default function ResourceDispatchView({
                       onClick={() => onSwitchOrg(req.ownerOrgId)}
                       className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-medium cursor-pointer"
                     >
-                      Switch to {owner?.shortName} to Approve →
+                      Switch to {owner?.shortName} to Approve
                     </button>
                   )}
                 </div>

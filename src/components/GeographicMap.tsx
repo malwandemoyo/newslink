@@ -199,7 +199,7 @@ export default function GeographicMap({
 
       marker.bindPopup(`
         <div style="min-width:210px;font-size:12px;line-height:1.4;color:#0f172a;">
-          <div style="font-size:10px;font-family:monospace;color:#d97706;text-transform:uppercase;font-weight:700;">
+          <div style="font-size:10px;font-family:monospace;color:#d97706;font-weight:700;">
             inDrive Field Broadcast • ${b.urgency}
           </div>
           <div style="font-weight:700;margin-top:3px;color:#0f172a;">${b.title}</div>
@@ -399,7 +399,7 @@ export default function GeographicMap({
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
         {/* Map Legend Overlay */}
-        <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 flex flex-wrap items-center gap-4 shadow-xl pointer-events-none">
+        <div className="absolute bottom-3 left-3 z-20 bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 flex flex-wrap items-center gap-4 shadow-lg pointer-events-none">
           <span className="flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 text-amber-400" />
             <span>📡 Field Broadcast Radius</span>
