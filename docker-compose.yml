@@ -13,6 +13,7 @@ services:
       - BACKEND_PORT=4000
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
+      - MAPS_API_KEY=${MAPS_API_KEY}
     volumes:
       - newsroom_sqlite:/app/data
     healthcheck:
@@ -38,6 +39,8 @@ services:
       - BACKEND_URL=http://newsroom-backend:4000
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
+      - MAPS_API_KEY=${MAPS_API_KEY}
+      - NEXT_PUBLIC_MAPS_API_KEY=${NEXT_PUBLIC_MAPS_API_KEY}
     volumes:
       - newsroom_sqlite:/app/data
     depends_on:

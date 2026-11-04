@@ -20,6 +20,7 @@ for (const envFile of [".env", ".env.local"]) {
 const PORT = Number(process.env.BACKEND_PORT || 4000);
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MAPS_API_KEY = (process.env.MAPS_API_KEY || "").trim();
 
 const DATA_DIR = path.join(process.cwd(), "data");
 if (!fs.existsSync(DATA_DIR)) {
@@ -149,6 +150,8 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     port: PORT,
     geminiModel: GEMINI_MODEL,
+    geminiConfigured: Boolean(GEMINI_API_KEY),
+    mapsConfigured: Boolean(MAPS_API_KEY),
     sqliteFile: DB_PATH,
     sqliteSizeKb: Math.round(stat.size / 1024),
     tables: { organisations: orgCount, ledger_transactions: txCount },

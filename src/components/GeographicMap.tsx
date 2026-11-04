@@ -65,15 +65,17 @@ export default function GeographicMap({
         zoomControl: true,
       });
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
-          subdomains: "abcd",
-          maxZoom: 19,
-        }
-      ).addTo(map);
+      const mapsApiKey = process.env.NEXT_PUBLIC_MAPS_API_KEY || "";
+      const tileUrl = mapsApiKey
+        ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(mapsApiKey)}`
+        : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+
+      L.tileLayer(tileUrl, {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
+        subdomains: "abcd",
+        maxZoom: 19,
+      }).addTo(map);
 
       const layerGroup = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
@@ -290,9 +292,11 @@ export default function GeographicMap({
           </div>
           <div>
             <h3 className="text-xs font-bold text-white flex items-center gap-2">
-              Live Leaflet Geospatial Dispatch & Equipment Map
+              Live Geospatial Network Map (Newsrooms, Gear, Specialists & Field Dispatch)
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
-                Leaflet + PostGIS Coords
+                {process.env.NEXT_PUBLIC_MAPS_API_KEY
+                  ? "Maps API Key: .env Active"
+                  : "Leaflet + PostGIS Coords"}
               </span>
             </h3>
             <p className="text-[11px] text-slate-400">
