@@ -36,6 +36,7 @@ import ResourceDispatchView from "@/components/ResourceDispatchView";
 import InvestigationWorkspaceView from "@/components/InvestigationWorkspaceView";
 import SecurityAuditView from "@/components/SecurityAuditView";
 import GeographicMap from "@/components/GeographicMap";
+import MediaVerificationWorkspace from "@/components/MediaVerificationWorkspace";
 import {
   LayoutDashboard,
   Camera,
@@ -692,6 +693,11 @@ export default function ConnectedNewsroomApp() {
                   </div>
                 </div>
               </div>
+
+              {/* LIVE 3-SCREEN MISLEADING HEADLINE VERIFIER (Hackathon Questions 1, 2, 3 & 5) */}
+              <MediaVerificationWorkspace
+                onContinueToKanban={() => setActiveNav("investigations")}
+              />
 
               {/* LIVE GEOSPATIAL NETWORK MAP (Newsrooms, Equipment, Specialists & Active Broadcasts) */}
               <GeographicMap
