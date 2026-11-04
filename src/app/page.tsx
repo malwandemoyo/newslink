@@ -38,6 +38,14 @@ import SecurityAuditView from "@/components/SecurityAuditView";
 import GeographicMap from "@/components/GeographicMap";
 import MediaVerificationWorkspace from "@/components/MediaVerificationWorkspace";
 import {
+  BlocksStatsGrid,
+  BlockCard,
+  BlockCardHeader,
+  BlockCardContent,
+  BlockCardFooter,
+  BlockBadge,
+} from "@/components/ui/blocks";
+import {
   LayoutDashboard,
   Camera,
   Users,
@@ -588,6 +596,43 @@ export default function ConnectedNewsroomApp() {
           {/* 1. MY NEWSROOM DESK (OVERVIEW) */}
           {activeNav === "overview" && (
             <div className="space-y-8">
+              {/* blocks.so Stats01 Divided KPI Strip */}
+              <BlocksStatsGrid
+                items={[
+                  {
+                    label: "Active Newsroom Wallet",
+                    value: "$420.00",
+                    change: "+140 Credits",
+                    changeTone: "positive",
+                    detail: `${activeOrg.shortName} · Dual-Rail Escrow`,
+                  },
+                  {
+                    label: "Shared Field Equipment",
+                    value: `${resources.filter((r) => r.status === "Available").length} / ${resources.length}`,
+                    change: "3 Cities",
+                    changeTone: "neutral",
+                    detail: "Bulawayo, Harare & Mutare hubs",
+                    onClick: () => setActiveNav("resources"),
+                  },
+                  {
+                    label: "Pre-Publication Sign-Off",
+                    value: `${currentDraft?.approvals.filter((a) => a.approved).length || 2} / 3 Gates`,
+                    change: allGatesSigned ? "Ready" : "1 Pending",
+                    changeTone: allGatesSigned ? "positive" : "warning",
+                    detail: "Lead, Partner & Legal Counsel",
+                    onClick: () => setActiveNav("investigations"),
+                  },
+                  {
+                    label: "Syndication Wire",
+                    value: `${stories.length} Packages`,
+                    change: "CC BY-NC-ND 4.0",
+                    changeTone: "positive",
+                    detail: "Commercial $120 split (60/35/5)",
+                    onClick: () => setActiveNav("news_exchange"),
+                  },
+                ]}
+              />
+
               {/* Welcome & Active Story Hero Card */}
               <div className="rounded-2xl border border-slate-800 border-t-2 border-t-teal-500 bg-slate-900 p-6 lg:p-8 shadow-sm space-y-6">
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -712,35 +757,29 @@ export default function ConnectedNewsroomApp() {
                 onInviteExpert={(exp) => handleInviteExpert(exp)}
               />
 
-              {/* AI RESOURCE & COLLABORATOR MATCHMAKER (Section 3 Module 5 of Original Prompt) */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-semibold text-teal-300">
-                      AI Newsroom Assistant
-                    </span>
-                    <h3 className="text-base font-semibold text-slate-100 mt-0.5">
-                      Resource &amp; Collaborator Matchmaker
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Matches available partner equipment and specialist journalists across the network to your active investigation.
-                    </p>
-                  </div>
-                  <button
-                    onClick={runAiRecommendations}
-                    disabled={loadingAiRecs}
-                    className="px-4 py-2.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs flex items-center gap-2 cursor-pointer shrink-0"
-                  >
-                    <Sparkles className="size-4" />
-                    {loadingAiRecs
-                      ? "Matching gear and specialists..."
-                      : "Recommend Gear & Collaborators"}
-                  </button>
-                </div>
+              {/* AI RESOURCE & COLLABORATOR MATCHMAKER (blocks.so Card Block) */}
+              <BlockCard>
+                <BlockCardHeader
+                  title="Resource & Collaborator Matchmaker"
+                  badge={<BlockBadge tone="teal">Gemini 3.8 Flash</BlockBadge>}
+                  description="Matches available partner equipment and specialist journalists across the network to your active investigation."
+                  action={
+                    <button
+                      onClick={runAiRecommendations}
+                      disabled={loadingAiRecs}
+                      className="px-4 py-2 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs flex items-center gap-2 cursor-pointer shrink-0"
+                    >
+                      <Sparkles className="size-4" />
+                      {loadingAiRecs
+                        ? "Matching gear and specialists..."
+                        : "Recommend Gear & Collaborators"}
+                    </button>
+                  }
+                />
 
                 {aiRecs && (
-                  <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
-                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+                  <BlockCardContent className="space-y-4 text-xs">
+                    <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
                       <strong className="text-teal-300">Strategy ({aiRecs.modelUsed}):</strong>{" "}
                       <span>{aiRecs.strategicBrief}</span>
                     </div>
@@ -753,7 +792,7 @@ export default function ConnectedNewsroomApp() {
                         {aiRecs.recommendedResources.map((rec) => (
                           <div
                             key={rec.resourceId}
-                            className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
+                            className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
                           >
                             <div>
                               <div className="font-semibold text-slate-100 tabular-nums">
@@ -765,7 +804,7 @@ export default function ConnectedNewsroomApp() {
                             </div>
                             <button
                               onClick={() => setActiveNav("resources")}
-                              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold shrink-0 cursor-pointer"
+                              className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold shrink-0 cursor-pointer"
                             >
                               Book
                             </button>
@@ -784,7 +823,7 @@ export default function ConnectedNewsroomApp() {
                           return (
                             <div
                               key={rec.expertId}
-                              className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
+                              className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
                             >
                               <div>
                                 <div className="font-semibold text-slate-100">
@@ -799,7 +838,7 @@ export default function ConnectedNewsroomApp() {
                                   if (expObj) handleInviteExpert(expObj);
                                   else setActiveNav("expertise");
                                 }}
-                                className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold shrink-0 cursor-pointer"
+                                className="px-3 py-1.5 rounded-md bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold shrink-0 cursor-pointer"
                               >
                                 Invite
                               </button>
@@ -808,246 +847,230 @@ export default function ConnectedNewsroomApp() {
                         })}
                       </div>
                     </div>
-                  </div>
+                  </BlockCardContent>
                 )}
-              </div>
+              </BlockCard>
 
-              {/* Action Needed From Your Desk (Live Offers & Approvals) */}
+              {/* Action Needed From Your Desk (blocks.so 2-Column Card Blocks) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: Live Field Dispatch Offers */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-bold text-white">
-                        Incoming Field Crew & Gear Offers
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Direct peer-to-peer offers on your urgent Bulawayo camera request
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveNav("resources")}
-                      className="text-xs text-teal-400 hover:underline font-semibold cursor-pointer"
-                    >
-                      See All
-                    </button>
-                  </div>
-
-                  {dispatchBroadcasts.slice(0, 1).map((b) => (
-                    <div key={b.id} className="space-y-3">
-                      {b.handoverPin && (
-                        <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between text-xs">
-                          <span className="text-emerald-200 font-semibold flex items-center gap-2">
-                            <KeyRound className="size-4 text-emerald-400" />
-                            Crew Dispatched! Handover PIN:
-                          </span>
-                          <span className="font-mono font-semibold text-sm px-3 py-1 rounded-lg bg-emerald-500 text-slate-950">
-                            {b.handoverPin}
-                          </span>
-                        </div>
-                      )}
-
-                      {b.bids.map((bid) => (
-                        <div
-                          key={bid.id}
-                          className="p-4 rounded-xl border border-slate-800 bg-slate-900/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-white">
-                                {bid.bidderName}
-                              </span>
-                              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
-                                ${bid.proposedRateUsd}/day
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-300">
-                              {bid.resourceTitle}
-                            </p>
-                            <p className="text-xs text-teal-400">
-                              {bid.etaNote}
-                            </p>
-                          </div>
-
-                          {b.status !== "Matched & Dispatched" ? (
-                            <button
-                              onClick={() =>
-                                mutateServerState(
-                                  "accept_dispatch_bid",
-                                  { broadcastId: b.id, bidId: bid.id },
-                                  "Offer accepted! Handover PIN generated."
-                                )
-                              }
-                              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow"
-                            >
-                              Accept Offer ✓
-                            </button>
-                          ) : (
-                            <span className="text-xs font-semibold text-emerald-400">
-                              {bid.status}
+                <BlockCard>
+                  <BlockCardHeader
+                    title="Incoming Field Crew & Gear Offers"
+                    description="Direct peer-to-peer offers on your urgent Bulawayo camera request"
+                    action={
+                      <button
+                        onClick={() => setActiveNav("resources")}
+                        className="text-xs text-teal-300 hover:underline font-medium cursor-pointer"
+                      >
+                        View all
+                      </button>
+                    }
+                  />
+                  <BlockCardContent className="space-y-3">
+                    {dispatchBroadcasts.slice(0, 1).map((b) => (
+                      <div key={b.id} className="space-y-3">
+                        {b.handoverPin && (
+                          <div className="p-3.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between text-xs">
+                            <span className="text-emerald-200 font-semibold flex items-center gap-2">
+                              <KeyRound className="size-4 text-emerald-400" />
+                              Crew dispatched · Handover PIN:
                             </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                            <span className="font-mono font-semibold text-sm px-2.5 py-1 rounded-md bg-emerald-400 text-slate-950 tabular-nums">
+                              {b.handoverPin}
+                            </span>
+                          </div>
+                        )}
+
+                        {b.bids.map((bid) => (
+                          <div
+                            key={bid.id}
+                            className="p-4 rounded-lg border border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-slate-100">
+                                  {bid.bidderName}
+                                </span>
+                                <BlockBadge tone="amber">
+                                  ${bid.proposedRateUsd}/day
+                                </BlockBadge>
+                              </div>
+                              <p className="text-xs text-slate-300">
+                                {bid.resourceTitle}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {bid.etaNote}
+                              </p>
+                            </div>
+
+                            {b.status !== "Matched & Dispatched" ? (
+                              <button
+                                onClick={() =>
+                                  mutateServerState(
+                                    "accept_dispatch_bid",
+                                    { broadcastId: b.id, bidId: bid.id },
+                                    "Offer accepted! Handover PIN generated."
+                                  )
+                                }
+                                className="px-3.5 py-2 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs shrink-0 cursor-pointer"
+                              >
+                                Accept Offer
+                              </button>
+                            ) : (
+                              <BlockBadge tone="emerald">{bid.status}</BlockBadge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </BlockCardContent>
+                </BlockCard>
 
                 {/* Right: Participating Newsrooms in the Network + Onboarding */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-base font-bold text-white">
-                        Participating Independent Newsrooms ({organisations.length})
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Switch newsrooms or onboard a new partner organisation
-                      </p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        setShowRegisterOrgModal(!showRegisterOrgModal)
-                      }
-                      className="px-3 py-1.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs cursor-pointer shrink-0"
-                    >
-                      + Register Newsroom
-                    </button>
-                  </div>
+                <BlockCard>
+                  <BlockCardHeader
+                    title="Participating Independent Newsrooms"
+                    badge={<BlockBadge tone="neutral">{organisations.length} Active</BlockBadge>}
+                    description="Switch newsrooms or onboard a new partner organisation"
+                    action={
+                      <button
+                        onClick={() =>
+                          setShowRegisterOrgModal(!showRegisterOrgModal)
+                        }
+                        className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs cursor-pointer shrink-0"
+                      >
+                        + Register Newsroom
+                      </button>
+                    }
+                  />
+                  <BlockCardContent className="space-y-3">
+                    {showRegisterOrgModal && (
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!newOrgName.trim()) return;
+                          await mutateServerState(
+                            "register_organisation",
+                            {
+                              name: newOrgName.trim(),
+                              shortName: newOrgName.trim().slice(0, 16),
+                              city: newOrgCity,
+                            },
+                            `Registered ${newOrgName} with $300 Escrow + 120 Credits!`
+                          );
+                          setShowRegisterOrgModal(false);
+                        }}
+                        className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2.5 text-xs"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <input
+                            type="text"
+                            value={newOrgName}
+                            onChange={(e) => setNewOrgName(e.target.value)}
+                            placeholder="Newsroom name..."
+                            className="sm:col-span-2 px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-slate-100"
+                          />
+                          <select
+                            value={newOrgCity}
+                            onChange={(e) => setNewOrgCity(e.target.value)}
+                            className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-slate-100"
+                          >
+                            <option value="Bulawayo">Bulawayo</option>
+                            <option value="Harare">Harare</option>
+                            <option value="Mutare">Mutare</option>
+                            <option value="Gweru">Gweru</option>
+                          </select>
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            className="px-3.5 py-1.5 rounded-md bg-teal-400 text-slate-950 font-semibold cursor-pointer"
+                          >
+                            Onboard &amp; Activate Wallet ($300 + 120 Credits)
+                          </button>
+                        </div>
+                      </form>
+                    )}
 
-                  {showRegisterOrgModal && (
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!newOrgName.trim()) return;
-                        await mutateServerState(
-                          "register_organisation",
-                          {
-                            name: newOrgName.trim(),
-                            shortName: newOrgName.trim().slice(0, 16),
-                            city: newOrgCity,
-                          },
-                          `Registered ${newOrgName} with $300 Escrow + 120 Credits!`
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {organisations.map((org) => {
+                        const isCurrent = org.id === activeOrgId;
+                        return (
+                          <button
+                            key={org.id}
+                            onClick={() => {
+                              setActiveOrgId(org.id);
+                              triggerToast(`Switched to ${org.name}.`);
+                            }}
+                            className={`p-3.5 rounded-lg border text-left transition cursor-pointer ${
+                              isCurrent
+                                ? "border-teal-500/60 bg-slate-950 ring-1 ring-teal-500/30"
+                                : "border-slate-800 bg-slate-950/60 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-slate-100">
+                                {org.shortName}
+                              </span>
+                              <span className="text-xs text-slate-400 flex items-center gap-1">
+                                <MapPin className="size-3 text-teal-400" />
+                                {org.city}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                              {org.description}
+                            </p>
+                          </button>
                         );
-                        setShowRegisterOrgModal(false);
-                      }}
-                      className="p-3.5 rounded-xl bg-slate-950 border border-teal-500/40 space-y-2.5 text-xs"
-                    >
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={newOrgName}
-                          onChange={(e) => setNewOrgName(e.target.value)}
-                          placeholder="Newsroom Name..."
-                          className="sm:col-span-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"
-                        />
-                        <select
-                          value={newOrgCity}
-                          onChange={(e) => setNewOrgCity(e.target.value)}
-                          className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"
-                        >
-                          <option value="Bulawayo">Bulawayo</option>
-                          <option value="Harare">Harare</option>
-                          <option value="Mutare">Mutare</option>
-                          <option value="Gweru">Gweru</option>
-                        </select>
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          className="px-3.5 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold cursor-pointer"
-                        >
-                          Onboard & Activate Wallet ($300 + 120 Credits)
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {organisations.map((org) => {
-                      const isCurrent = org.id === activeOrgId;
-                      return (
-                        <button
-                          key={org.id}
-                          onClick={() => {
-                            setActiveOrgId(org.id);
-                            triggerToast(`Switched to ${org.name}.`);
-                          }}
-                          className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
-                            isCurrent
-                              ? "border-teal-500 bg-teal-500/10"
-                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-bold text-white">
-                              {org.shortName}
-                            </span>
-                            <span className="text-xs text-teal-400 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {org.city}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                            {org.description}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                      })}
+                    </div>
+                  </BlockCardContent>
+                </BlockCard>
               </div>
 
-              {/* Money & Network Credits Movement Ledger (Escrow, Gear Rentals & Story Syndication Splits) */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      Escrow Wallet & Network Credit Settlement Ledger
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Tracks how money (USD via Paynow / EcoCash with 95% Lender / 5% Platform fee) and Reciprocal Network Credits move across newsrooms
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-bold text-emerald-300">
-                    Dual-Rail: USD Escrow (5% Fee) + Reciprocal Credits (0% Fee)
-                  </span>
-                </div>
-
+              {/* Money & Network Credits Movement Ledger (blocks.so Table01 Block) */}
+              <BlockCard>
+                <BlockCardHeader
+                  title="Escrow Wallet & Network Credit Settlement Ledger"
+                  badge={<BlockBadge tone="emerald">Dual-Rail: 5% Escrow / 0% Credits</BlockBadge>}
+                  description="Tracks how money (USD via Paynow / EcoCash with 95% Lender / 5% Platform fee) and Reciprocal Network Credits move across newsrooms"
+                />
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full text-left border-collapse text-xs tabular-nums">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400">
-                        <th className="py-2 px-3">Category</th>
-                        <th className="py-2 px-3">Settlement Details</th>
-                        <th className="py-2 px-3">Gross USD</th>
-                        <th className="py-2 px-3">Platform Fee (5%)</th>
-                        <th className="py-2 px-3">Net to Newsroom</th>
-                        <th className="py-2 px-3">Network Credits</th>
-                        <th className="py-2 px-3">Payment Rail</th>
+                      <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-medium">
+                        <th className="py-2.5 px-4">Category</th>
+                        <th className="py-2.5 px-4">Settlement Details</th>
+                        <th className="py-2.5 px-4">Gross USD</th>
+                        <th className="py-2.5 px-4">Platform Fee (5%)</th>
+                        <th className="py-2.5 px-4">Net to Newsroom</th>
+                        <th className="py-2.5 px-4">Network Credits</th>
+                        <th className="py-2.5 px-4">Payment Rail</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/70">
+                    <tbody className="divide-y divide-slate-800">
                       {ledgerTransactions.slice(0, 6).map((tx) => (
-                        <tr key={tx.id}>
-                          <td className="py-2.5 px-3 font-semibold text-teal-300">
-                            {tx.category}
+                        <tr key={tx.id} className="hover:bg-slate-800/30 transition">
+                          <td className="py-3 px-4 font-medium text-slate-200">
+                            <BlockBadge tone="teal">{tx.category}</BlockBadge>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-200">
+                          <td className="py-3 px-4 text-slate-300">
                             {tx.description}
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-white">
+                          <td className="py-3 px-4 font-mono text-slate-100">
                             ${Number(tx.gross_amount_usd).toFixed(2)}
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-amber-300">
+                          <td className="py-3 px-4 font-mono text-slate-400">
                             ${Number(tx.platform_fee_usd).toFixed(2)}
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-emerald-300 font-bold">
+                          <td className="py-3 px-4 font-mono text-emerald-300 font-semibold">
                             ${Number(tx.net_payout_usd).toFixed(2)}
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-sky-300">
+                          <td className="py-3 px-4 font-mono text-teal-300">
                             {tx.credits_moved > 0 ? `+${tx.credits_moved} cr` : "—"}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-400">
+                          <td className="py-3 px-4 text-slate-400">
                             {tx.payment_rail}
                           </td>
                         </tr>
@@ -1055,7 +1078,7 @@ export default function ConnectedNewsroomApp() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </BlockCard>
             </div>
           )}
 
@@ -1127,45 +1150,47 @@ export default function ConnectedNewsroomApp() {
             />
           )}
 
-          {/* 3. PEOPLE & EXPERTS */}
+          {/* 3. PEOPLE & EXPERTS (blocks.so GridList01) */}
           {activeNav === "expertise" && (
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-800">
                 <div>
-                  <h1 className="text-xl font-bold text-white">
-                    Specialist Journalists & Researchers
+                  <h1 className="text-xl font-semibold text-slate-50">
+                    Specialist Journalists &amp; Researchers
                   </h1>
                   <p className="text-sm text-slate-400 mt-0.5">
                     Discover verified data journalists, drone operators, media lawyers, and translators across partner newsrooms.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
-                    <Search className="size-4 text-slate-400 absolute left-3.5 top-2.5" />
+                    <Search className="size-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="text"
                       value={skillFilter}
                       onChange={(e) => setSkillFilter(e.target.value)}
                       placeholder="Search skill or beat..."
-                      className="pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 w-60"
+                      className="pl-9 pr-4 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-100 w-56"
                     />
                   </div>
-                  {["All", "English", "Ndebele", "Shona", "Ndau"].map(
-                    (lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => setLanguageFilter(lang)}
-                        className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition ${
-                          languageFilter === lang
-                            ? "bg-teal-500 text-slate-950"
-                            : "bg-slate-900 text-slate-300 border border-slate-800"
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    )
-                  )}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-900 border border-slate-800">
+                    {["All", "English", "Ndebele", "Shona", "Ndau"].map(
+                      (lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => setLanguageFilter(lang)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition ${
+                            languageFilter === lang
+                              ? "bg-teal-400 text-slate-950 font-semibold"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1187,77 +1212,71 @@ export default function ConnectedNewsroomApp() {
                     const isCollaborating = collaborations.some(
                       (c) => c.expertId === exp.id
                     );
+                    const initials = exp.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("");
 
                     return (
-                      <div
-                        key={exp.id}
-                        className="p-5 rounded-2xl border border-slate-800 bg-slate-900 flex flex-col justify-between gap-5 shadow-sm"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h3 className="text-base font-bold text-white">
-                                {exp.name}
-                              </h3>
-                              <p className="text-xs text-teal-400 font-medium mt-0.5">
-                                {exp.role}
-                              </p>
-                            </div>
-                            <span
-                              className={`text-xs px-2.5 py-0.5 rounded-full font-semibold shrink-0 ${
+                      <BlockCard key={exp.id}>
+                        <BlockCardHeader
+                          title={
+                            <span className="flex items-center gap-2.5">
+                              <span className="size-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-teal-300">
+                                {initials}
+                              </span>
+                              <span>{exp.name}</span>
+                            </span>
+                          }
+                          description={`${exp.role} · ${org?.shortName || exp.city} (${exp.city})`}
+                          action={
+                            <BlockBadge
+                              tone={
                                 exp.availability === "Available for Collab"
-                                  ? "bg-emerald-500/15 text-emerald-300"
-                                  : "bg-amber-500/15 text-amber-300"
-                              }`}
+                                  ? "emerald"
+                                  : "amber"
+                              }
                             >
                               {exp.availability}
-                            </span>
-                          </div>
-
-                          <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <MapPin className="size-3.5 text-teal-400" />
-                            {org?.name} ({exp.city})
-                          </div>
-
+                            </BlockBadge>
+                          }
+                        />
+                        <BlockCardContent className="space-y-3">
                           <p className="text-xs text-slate-300 leading-relaxed">
                             {exp.bio}
                           </p>
 
-                          <div className="flex flex-wrap gap-1.5 pt-1">
+                          <div className="flex flex-wrap gap-1.5">
                             {exp.skills.map((sk) => (
-                              <span
-                                key={sk}
-                                className="text-xs px-2.5 py-1 rounded-lg bg-slate-900 text-sky-300 border border-slate-800"
-                              >
+                              <BlockBadge key={sk} tone="neutral">
                                 {sk}
-                              </span>
+                              </BlockBadge>
                             ))}
                           </div>
-
-                          <div className="text-xs text-slate-400 pt-1">
+                        </BlockCardContent>
+                        <BlockCardFooter>
+                          <span className="text-xs text-slate-400">
                             Languages:{" "}
-                            <strong className="text-slate-200">
+                            <strong className="text-slate-200 font-medium">
                               {exp.languages.join(", ")}
                             </strong>
-                          </div>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-800">
+                          </span>
                           {isCollaborating ? (
-                            <div className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
-                              <CheckCircle2 className="size-4" />
-                              Collaborating on Umzingwane Story
-                            </div>
+                            <BlockBadge tone="emerald">
+                              <CheckCircle2 className="size-3.5" />
+                              Collaborating
+                            </BlockBadge>
                           ) : (
                             <button
                               onClick={() => handleInviteExpert(exp)}
-                              className="w-full py-2.5 px-4 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
+                              className="px-3 py-1.5 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs transition cursor-pointer"
                             >
-                              Invite to Investigation
+                              Invite
                             </button>
                           )}
-                        </div>
-                      </div>
+                        </BlockCardFooter>
+                      </BlockCard>
                     );
                   })}
               </div>
@@ -1352,21 +1371,21 @@ export default function ConnectedNewsroomApp() {
             />
           )}
 
-          {/* 5. NEWS WIRE & SYNDICATION EXCHANGE */}
+          {/* 5. NEWS WIRE & SYNDICATION EXCHANGE (blocks.so Card & Dialog Blocks) */}
           {activeNav === "news_exchange" && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
                 <div>
-                  <h1 className="text-xl font-bold text-white">
-                    News Wire & Story Syndication
+                  <h1 className="text-xl font-semibold text-slate-50">
+                    News Wire &amp; Story Syndication
                   </h1>
                   <p className="text-sm text-slate-400 mt-0.5">
                     Discover and republish human-verified stories from partner newsrooms with clear attribution and licensing.
                   </p>
                 </div>
-                <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                <BlockBadge tone="emerald">
                   {stories.length} Verified Story Packages
-                </span>
+                </BlockBadge>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1382,79 +1401,64 @@ export default function ConnectedNewsroomApp() {
                     .filter(Boolean);
 
                   return (
-                    <div
-                      key={story.id}
-                      className="p-6 rounded-2xl border border-slate-800 bg-slate-900 flex flex-col justify-between gap-5 shadow-sm"
-                    >
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
-                            {story.licenseType}
-                          </span>
-                          <span className="text-xs text-emerald-300 flex items-center gap-1.5 font-semibold">
-                            <FileCheck className="size-4" />
+                    <BlockCard key={story.id}>
+                      <BlockCardHeader
+                        title={story.title}
+                        description={story.subtitle}
+                        badge={<BlockBadge tone="teal">{story.licenseType}</BlockBadge>}
+                        action={
+                          <BlockBadge tone="emerald">
+                            <FileCheck className="size-3.5" />
                             {story.embargoLift}
-                          </span>
-                        </div>
-
-                        <div>
-                          <h3 className="text-lg font-bold text-white leading-snug">
-                            {story.title}
-                          </h3>
-                          <p className="text-sm text-slate-300 mt-1.5 leading-relaxed">
-                            {story.subtitle}
-                          </p>
-                        </div>
-
-                        <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                          </BlockBadge>
+                        }
+                      />
+                      <BlockCardContent className="space-y-4">
+                        <p className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800">
                           “{story.excerpt}”
                         </p>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {story.mediaIncluded.map((m) => (
-                            <span
-                              key={m}
-                              className="text-xs px-2.5 py-1 rounded-lg bg-slate-900 text-sky-300 border border-slate-800"
-                            >
-                              ✓ {m}
-                            </span>
+                            <BlockBadge key={m} tone="neutral">
+                              {m}
+                            </BlockBadge>
                           ))}
                         </div>
 
-                        <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1.5">
+                        <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-1.5">
                           <div className="text-slate-200">
-                            <strong>Origin:</strong> {originOrg?.name}{" "}
+                            <strong className="text-slate-400">Origin:</strong> {originOrg?.name}{" "}
                             {coOrgs.length > 0 &&
                               `+ Co-reported with ${coOrgs.join(", ")}`}
                           </div>
-                          <div className="text-teal-300">
-                            <strong>Credit Line:</strong>{" "}
+                          <div className="text-slate-300">
+                            <strong className="text-slate-400">Credit Line:</strong>{" "}
                             {story.attributionRequirement}
                           </div>
                           <div className="text-emerald-300">
-                            <strong>Signed Off By:</strong>{" "}
+                            <strong className="text-slate-400">Signed Off By:</strong>{" "}
                             {story.humanVerifiedBy}
                           </div>
                         </div>
-                      </div>
+                      </BlockCardContent>
 
-                      <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                      <BlockCardFooter>
                         <button
                           onClick={() => setReadingStory(story)}
-                          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                          className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer tabular-nums"
                         >
                           Read Full Story ({story.wordCount} words)
                         </button>
 
                         <button
                           onClick={() => handleRequestSyndication(story)}
-                          className="px-5 py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs transition cursor-pointer shadow"
+                          className="px-4 py-2 rounded-lg bg-teal-400 hover:bg-teal-300 text-slate-950 font-semibold text-xs transition cursor-pointer tabular-nums"
                         >
-                          Republish in {activeOrg.shortName} (
-                          {story.republishCount})
+                          Republish in {activeOrg.shortName} ({story.republishCount})
                         </button>
-                      </div>
-                    </div>
+                      </BlockCardFooter>
+                    </BlockCard>
                   );
                 })}
               </div>
